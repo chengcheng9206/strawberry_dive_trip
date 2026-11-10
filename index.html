@@ -86,14 +86,16 @@
       scrollbar-width: none;
     }
     @keyframes bubbleUp {
-      0% { transform: translateY(0) scale(0.6); opacity: 1; }
-      100% { transform: translateY(-40px) scale(1.2); opacity: 0; }
+      0% { transform: translate(-50%, 0) scale(0.6); opacity: 1; }
+      100% { transform: translate(-50%, -55px) scale(1.3); opacity: 0; }
     }
     .bubble-drop {
       position: absolute;
       pointer-events: none;
-      animation: bubbleUp 0.8s ease-out forwards;
-      font-size: 20px;
+      animation: bubbleUp 0.85s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+      font-size: 24px;
+      z-index: 30;
+      will-change: transform, opacity;
     }
     @keyframes diverKick {
       0%, 100% { transform: rotate(0deg); }
@@ -144,16 +146,16 @@
         </button>
 
         <button onclick="shareTrip()" class="w-11 h-11 rounded-full comic-box bg-white flex items-center justify-center hover:bg-neutral-50 active:scale-95 transition-transform shrink-0 shadow-comic-sm" title="複製連結">
-          <i data-lucide="share-2" class="w-5 h-5 text-comicBorder"></i>
+          <span class="text-base">🔗</span>
         </button>
       </div>
     </header>
 
     <!-- ========================= TAB 1: 首頁 ========================= -->
     <div id="tab-home" class="space-y-3.5">
-      <!-- 核心插畫卡片 (點擊海島餵草莓與吐泡泡) -->
-      <div class="comic-box bg-[#a7e7fb] overflow-hidden relative cursor-pointer select-none max-h-[380px] flex items-center justify-center" onclick="dropStrawberryBubble(event)" title="點擊蔚藍大海釋放泡泡與草莓！">
-        <svg viewBox="0 0 400 240" class="w-full h-auto max-h-[360px] block object-contain" xmlns="http://www.w3.org/2000/svg">
+      <!-- 核心插畫卡片 (支援 Touch & Click，優化手機觸發) -->
+      <div id="ocean-interactive-box" class="comic-box bg-[#a7e7fb] overflow-hidden relative cursor-pointer select-none max-h-[380px] flex items-center justify-center active:scale-[0.99] transition-transform" title="點擊蔚藍大海釋放泡泡與草莓！">
+        <svg viewBox="0 0 400 240" class="w-full h-auto max-h-[360px] block object-contain pointer-events-none" xmlns="http://www.w3.org/2000/svg">
           <!-- 海洋背景 -->
           <rect width="400" height="240" fill="#a0e3fa"/>
           
@@ -249,7 +251,7 @@
 
         <div id="bubble-container" class="absolute inset-0 pointer-events-none"></div>
 
-        <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-[92%] max-w-sm">
+        <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-[92%] max-w-sm pointer-events-none">
           <div class="bg-white/95 backdrop-blur-sm comic-box-md py-1.5 px-3 text-center shadow-comic-sm">
             <span class="text-xs font-black text-comicBorder flex items-center justify-center gap-1">
               <span class="text-rose-500">🍓</span>
@@ -697,21 +699,21 @@
     <div class="max-w-xl mx-auto flex items-center justify-around">
       <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center">
         <div class="nav-icon-box w-12 h-8 rounded-2xl bg-appYellow border-2 border-comicBorder flex items-center justify-center shadow-comic-sm">
-          <i data-lucide="home" class="w-4 h-4 text-comicBorder"></i>
+          <span class="text-sm">🏠</span>
         </div>
         <span class="text-[11px] font-black text-comicBorder mt-0.5">首頁</span>
       </button>
 
       <button onclick="switchTab('itinerary')" id="nav-itinerary" class="flex flex-col items-center opacity-60">
         <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
-          <i data-lucide="calendar" class="w-4 h-4 text-comicBorder"></i>
+          <span class="text-sm">📅</span>
         </div>
         <span class="text-[11px] font-bold text-comicBorder mt-0.5">行程</span>
       </button>
 
       <button onclick="switchTab('dive')" id="nav-dive" class="flex flex-col items-center opacity-60">
         <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
-          <i data-lucide="anchor" class="w-4 h-4 text-comicBorder"></i>
+          <span class="text-sm">🤿</span>
         </div>
         <span class="text-[11px] font-bold text-comicBorder mt-0.5">潛水</span>
       </button>
@@ -725,14 +727,14 @@
 
       <button onclick="switchTab('transit')" id="nav-transit" class="flex flex-col items-center opacity-60">
         <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
-          <i data-lucide="navigation" class="w-4 h-4 text-comicBorder"></i>
+          <span class="text-sm">🚢</span>
         </div>
         <span class="text-[11px] font-bold text-comicBorder mt-0.5">交通</span>
       </button>
 
       <button onclick="switchTab('pack')" id="nav-pack" class="flex flex-col items-center opacity-60">
         <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
-          <i data-lucide="briefcase" class="w-4 h-4 text-comicBorder"></i>
+          <span class="text-sm">🎒</span>
         </div>
         <span class="text-[11px] font-bold text-comicBorder mt-0.5">清單</span>
       </button>
@@ -1118,161 +1120,161 @@
       pushToCloud();
       showToast('🔄 已手動觸發雲端同步！');
     }
+    // ================= 倒數計時器 (高相容動態計算) =================
+    function initCountdown() {
+      function getTripTargetDates() {
+        const now = new Date();
+        const curYear = now.getFullYear();
+        // 優先以當前年份的 11/20 08:00 為基準，若已過則自動順延至次年
+        let startDate = new Date(curYear, 10, 20, 8, 0, 0); // 10 代表 11 月
+        let endDate = new Date(curYear, 11, 7, 18, 0, 0);   // 11 代表 12 月
 
-    function openConfigModal() {
-      const savedConfig = localStorage.getItem('berry_firebase_config') || JSON.stringify(defaultFirebaseConfig, null, 2);
-      document.getElementById('firebase-config-input').value = savedConfig;
-      document.getElementById('config-modal').classList.remove('hidden');
-    }
-
-    function saveFirebaseConfig() {
-      let raw = document.getElementById('firebase-config-input').value.trim();
-      if (!raw) return showToast('請填入 Firebase Config 內容！');
-
-      if (raw.includes('{') && raw.includes('}')) {
-        raw = raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1);
-      }
-
-      try {
-        let formatted = raw.replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
-        const parsed = JSON.parse(formatted);
-        localStorage.setItem('berry_firebase_config', JSON.stringify(parsed));
-        closeModal('config-modal');
-        showToast('✅ Firebase Config 儲存成功，正在連線...');
-        initFirebaseSync();
-      } catch (e) {
-        try {
-          const fn = new Function(`return ${raw}`);
-          const parsed = fn();
-          localStorage.setItem('berry_firebase_config', JSON.stringify(parsed));
-          closeModal('config-modal');
-          showToast('✅ Firebase Config 儲存成功，正在連線...');
-          initFirebaseSync();
-        } catch (err2) {
-          showToast('❌ JSON 格式有誤，請確認複製正確！');
+        if (now.getTime() > endDate.getTime()) {
+          startDate = new Date(curYear + 1, 10, 20, 8, 0, 0);
+          endDate = new Date(curYear + 1, 11, 7, 18, 0, 0);
         }
+        return { start: startDate.getTime(), end: endDate.getTime() };
       }
-    }
 
-    function clearFirebaseConfig() {
-      localStorage.removeItem('berry_firebase_config');
-      document.getElementById('firebase-config-input').value = '';
-      closeModal('config-modal');
-      const statusBadge = document.getElementById('sync-status-badge');
-      if (statusBadge) statusBadge.textContent = '使用預設雲端配置';
-      showToast('已恢復預設專案配置');
-      initFirebaseSync();
-    }
+      function update() {
+        const now = Date.now();
+        const { start: targetTime, end: endTime } = getTripTargetDates();
+        let diff = targetTime - now;
+        const titleEl = document.getElementById('cd-title');
 
-    // ================= 使用者權限設定 =================
-    const VALID_PASSCODES = ["8888", "1111", "2026"];
-    let currentUser = {
-      role: "Guest",
-      isAuthorized: false
-    };
-
-    function initAuthStatus() {
-      try {
-        const savedRole = localStorage.getItem('berry_user_role') || sessionStorage.getItem('berry_user_role');
-        const savedAuth = localStorage.getItem('berry_is_auth') || sessionStorage.getItem('berry_is_auth');
-        if (savedAuth === 'true' && ['Dylan', 'Joyce', 'Wendy'].includes(savedRole)) {
-          currentUser.role = savedRole;
-          currentUser.isAuthorized = true;
-        }
-      } catch (e) {}
-      updateAuthUI();
-    }
-
-    function updateAuthUI() {
-      const lockIcon = document.getElementById('auth-lock-icon');
-      const userLabel = document.getElementById('auth-user-label');
-      const expPayerSelect = document.getElementById('exp-payer');
-
-      if (currentUser.isAuthorized) {
-        lockIcon.textContent = '🔓';
-        userLabel.textContent = `${currentUser.role} (可編輯)`;
-        if (expPayerSelect) expPayerSelect.value = currentUser.role;
-      } else {
-        lockIcon.textContent = '🔒';
-        userLabel.textContent = '解鎖編輯';
-      }
-    }
-
-    function openAuthModal() {
-      document.getElementById('auth-passcode').value = '';
-      selectRole(currentUser.role !== 'Guest' ? currentUser.role : 'Dylan');
-      document.getElementById('auth-modal').classList.remove('hidden');
-    }
-
-    let selectedRoleInModal = 'Dylan';
-    function selectRole(role) {
-      selectedRoleInModal = role;
-      ['Dylan', 'Joyce', 'Wendy'].forEach(r => {
-        const btn = document.getElementById(`role-btn-${r}`);
-        if (!btn) return;
-        if (r === role) {
-          btn.className = 'py-2 rounded-xl comic-box-md bg-appYellow text-comicBorder font-black shadow-comic-sm text-xs';
+        if (diff > 0) {
+          if (titleEl) titleEl.textContent = "距離小琉球第一跳出發還有";
+        } else if (now >= targetTime && now <= endTime) {
+          if (titleEl) titleEl.textContent = "🤿 爛草莓三大潛點特攻進行中！";
+          diff = endTime - now;
         } else {
-          btn.className = 'py-2 rounded-xl comic-box-md bg-white text-comicBorder font-bold text-xs';
+          if (titleEl) titleEl.textContent = "🎉 潛水遠征圓滿成功！期待下次回海裡";
+          document.getElementById('cd-day').textContent = "0";
+          document.getElementById('cd-hour').textContent = "00";
+          document.getElementById('cd-min').textContent = "00";
+          document.getElementById('cd-sec').textContent = "00";
+          return;
+        }
+
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0');
+        const m = String(Math.floor((diff / (1000 * 60)) % 60)).padStart(2, '0');
+        const s = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+
+        const elD = document.getElementById('cd-day');
+        const elH = document.getElementById('cd-hour');
+        const elM = document.getElementById('cd-min');
+        const elS = document.getElementById('cd-sec');
+        if (elD) elD.textContent = d;
+        if (elH) elH.textContent = h;
+        if (elM) elM.textContent = m;
+        if (elS) elS.textContent = s;
+      }
+
+      update();
+      setInterval(update, 1000);
+    }
+
+    // ================= 互動特效：海龜泡泡與草莓掉落 (強化手機 Touch) =================
+    function dropStrawberryBubble(e) {
+      if (e) {
+        if (e.stopPropagation) e.stopPropagation();
+      }
+      const container = document.getElementById('bubble-container');
+      const box = document.getElementById('ocean-interactive-box');
+      if (!container || !box) return;
+
+      const rect = box.getBoundingClientRect();
+      let clientX = rect.left + rect.width / 2;
+      let clientY = rect.top + rect.height / 2;
+
+      if (e) {
+        if (e.touches && e.touches.length > 0) {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
+        } else if (e.clientX !== undefined) {
+          clientX = e.clientX;
+          clientY = e.clientY;
+        }
+      }
+
+      const x = Math.max(20, Math.min(rect.width - 20, clientX - rect.left));
+      const y = Math.max(20, Math.min(rect.height - 20, clientY - rect.top));
+
+      const icons = ['🫧', '🍓', '🤿', '🐢', '🫧'];
+      for (let i = 0; i < 4; i++) {
+        const item = document.createElement('div');
+        item.className = 'bubble-drop';
+        item.textContent = icons[Math.floor(Math.random() * icons.length)];
+        const spreadX = (Math.random() - 0.5) * 48;
+        const spreadY = (Math.random() - 0.5) * 24;
+        item.style.left = `${x + spreadX}px`;
+        item.style.top = `${y + spreadY}px`;
+        container.appendChild(item);
+
+        setTimeout(() => {
+          if (item.parentNode) item.parentNode.removeChild(item);
+        }, 850);
+      }
+
+      const turtle = document.getElementById('turtle-el');
+      if (turtle) {
+        turtle.style.transform = 'translate(42px, 160px) scale(1.15)';
+        setTimeout(() => {
+          turtle.style.transform = 'translate(42px, 172px) scale(1)';
+        }, 320);
+      }
+
+      showToast("🌊 爛草莓三人組正在大海裡開心中性浮力！");
+    }
+
+    function initInteractiveOcean() {
+      const oceanBox = document.getElementById('ocean-interactive-box');
+      if (!oceanBox) return;
+
+      let lastTrigger = 0;
+      const handleTap = (evt) => {
+        const now = Date.now();
+        if (now - lastTrigger < 150) return; // 防抖
+        lastTrigger = now;
+        dropStrawberryBubble(evt);
+      };
+
+      oceanBox.addEventListener('touchstart', handleTap, { passive: true });
+      oceanBox.addEventListener('click', handleTap);
+    }
+
+    // ================= 切換分頁 =================
+    function switchTab(tabId) {
+      ['home', 'itinerary', 'dive', 'expense', 'transit', 'pack'].forEach(t => {
+        const p = document.getElementById(`tab-${t}`);
+        const n = document.getElementById(`nav-${t}`);
+        if (p) p.classList.add('hidden');
+        if (n) {
+          n.classList.add('opacity-60');
+          const box = n.querySelector('.nav-icon-box');
+          if (box) {
+            box.classList.remove('bg-appYellow', 'shadow-comic-sm');
+            box.classList.add('bg-white');
+          }
         }
       });
-    }
 
-    function unlockEditor() {
-      const pass = document.getElementById('auth-passcode').value.trim();
-      if (VALID_PASSCODES.includes(pass) || pass === '8888') {
-        currentUser.role = selectedRoleInModal;
-        currentUser.isAuthorized = true;
-        try {
-          localStorage.setItem('berry_user_role', currentUser.role);
-          localStorage.setItem('berry_is_auth', 'true');
-        } catch(e) {}
-        closeModal('auth-modal');
-        updateAuthUI();
-        renderDaySchedule();
-        renderExpenses();
-        renderDiveLogs();
-        showToast(`🎉 歡迎隊員 ${currentUser.role}！已解鎖特攻隊編輯權限`);
-      } else {
-        showToast('❌ 通行碼錯誤！請嘗試 8888 或 1111');
+      const curP = document.getElementById(`tab-${tabId}`);
+      const curN = document.getElementById(`nav-${tabId}`);
+      if (curP) curP.classList.remove('hidden');
+      if (curN) {
+        curN.classList.remove('opacity-60');
+        const box = curN.querySelector('.nav-icon-box');
+        if (box) {
+          box.classList.remove('bg-white');
+          box.classList.add('bg-appYellow', 'shadow-comic-sm');
+        }
       }
-    }
 
-    function lockToReadOnly() {
-      currentUser.role = 'Guest';
-      currentUser.isAuthorized = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       try {
-        localStorage.removeItem('berry_user_role');
-        localStorage.removeItem('berry_is_auth');
-      } catch(e) {}
-      closeModal('auth-modal');
-      updateAuthUI();
-      renderDaySchedule();
-      renderExpenses();
-      renderDiveLogs();
-      showToast('🔒 已切換為訪客唯讀模式');
-    }
-
-    function checkEditPermission() {
-      if (!currentUser.isAuthorized) {
-        openAuthModal();
-        showToast('🔒 訪客模式僅能瀏覽，請先輸入通行碼解鎖！');
-        return false;
-      }
-      return true;
-    }
-
-    // ================= 快取機制 (本地離線儲存) =================
-    function loadLocalCache() {
-      try {
-        const cachedExp = localStorage.getItem('berry_cache_expenses');
-        if (cachedExp) expenses = JSON.parse(cachedExp);
-
-        const cachedTrip = localStorage.getItem('berry_cache_trip');
-        if (cachedTrip) tripData = JSON.parse(cachedTrip);
-
-        const cachedLogs = localStorage.getItem('berry_cache_divelogs');
-        if (cachedLogs) diveLogs = JSON.parse(cachedLogs);
+        if (window.lucide) lucide.createIcons();
       } catch (e) {}
     }
 
@@ -1784,17 +1786,26 @@
 
     // 初始化程式
     window.addEventListener('DOMContentLoaded', () => {
-      loadLocalCache();
+      try {
+        loadLocalCache();
+      } catch (e) {}
+
       initCountdown();
+      initInteractiveOcean();
       initAuthStatus();
       renderDaysNav();
       setDay(1);
       renderExpenses();
       renderDiveLogs();
-      if (window.lucide) lucide.createIcons();
 
-      // 自動連線至你的 Firebase 專案
-      initFirebaseSync();
+      try {
+        if (window.lucide) lucide.createIcons();
+      } catch (e) {}
+
+      // 自動連線至你的 Firebase 專案 (非阻塞)
+      setTimeout(() => {
+        initFirebaseSync();
+      }, 100);
     });
   </script>
 </body>
