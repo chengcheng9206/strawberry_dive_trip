@@ -869,6 +869,138 @@
       </div>
 
       <div class="space-y-2 text-xs font-bold pt-1">
+        <div>
+          <label class="block text-comicBorder mb-1">你是哪位隊員？</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" onclick="selectRole('Dylan')" id="role-btn-Dylan" class="py-2 rounded-xl comic-box-md bg-appYellow text-comicBorder font-black shadow-comic-sm text-xs">Dylan</button>
+            <button type="button" onclick="selectRole('Joyce')" id="role-btn-Joyce" class="py-2 rounded-xl comic-box-md bg-white text-comicBorder font-bold text-xs">Joyce</button>
+            <button type="button" onclick="selectRole('Wendy')" id="role-btn-Wendy" class="py-2 rounded-xl comic-box-md bg-white text-comicBorder font-bold text-xs">Wendy</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-comicBorder mb-1">專屬通行密碼 (預設 8888 或 1111)</label>
+          <input type="password" id="auth-passcode" placeholder="請輸入 4 位數通行碼" maxlength="8" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder font-mono text-center text-lg focus:outline-none">
+        </div>
+      </div>
+
+      <div class="space-y-2 pt-2">
+        <button onclick="unlockEditor()" class="w-full py-2.5 bg-appYellow rounded-xl comic-box-md text-xs font-black shadow-comic-sm active:scale-95">驗證並解鎖編輯權限</button>
+        <button onclick="lockToReadOnly()" class="w-full py-2 bg-white rounded-xl comic-box-md text-xs font-bold text-subGray">切換為訪客唯讀模式</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 提示浮動框 Toast -->
+  <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-comicBorder text-white px-4 py-2 rounded-full text-xs font-black opacity-0 pointer-events-none transition-opacity duration-300 z-50 shadow-lg">
+    提示訊息
+  </div>
+
+  <script>
+    // ================= 預設行程資料 (11/20 ~ 12/07) =================
+    const defaultTripData = {
+      1: [
+        { time: "11:00", name: "東港搭船前往小琉球", desc: "東琉線/泰富/藍白聯營，抵達後依指示取車" },
+        { time: "12:00", name: "騰千機車行取車 & 行李送至民宿", desc: "聯絡電話 0905-952-035，告知住在「我們這一家」" },
+        { time: "13:00", name: "第一天 Fun Dive 兩支 (小琉球)", desc: "w/ 志村教練，適應水溫與裝備檢查" },
+        { time: "18:00", name: "小琉球街區晚餐美食", desc: "慶祝特攻隊抵達！早點休息準備明日考照" }
+      ],
+      2: [
+        { time: "09:00", name: "民宿早餐 & 準備出發", desc: "使用附贈早餐券，前往潛店集合" },
+        { time: "13:00", name: "嗡嗡 AOW Day 1：中性浮力 + 浮力袋施放", desc: "【考照重要項目】頂尖中性浮力練習、SMB 施放技巧 (楊陪考)" },
+        { time: "15:00", name: "嗡嗡 AOW Day 1：水下導航 + 浮力袋施放", desc: "指北針指引導航、水下定位、再度施放 SMB" },
+        { time: "18:00", name: "嗡嗡 AOW Day 1：夜潛 (Night Dive)", desc: "攜帶水下手電筒夜探神祕小琉球沉船與夜行生物" }
+      ],
+      3: [
+        { time: "11:00", name: "集合前往港口準備船潛", desc: "準備高氧氣瓶檢查 (EANx 分析與簽名)" },
+        { time: "12:20", name: "嗡嗡 AOW Day 2：高氧船潛兩支放流 (Drift)", desc: "乘船出海！體驗刺激的放流潛水與高氧深度體驗 (楊陪考)" },
+        { time: "18:00", name: "慶祝 AOW 順利通過晚宴", desc: "恭喜嗡嗡晉升進階開放水域潛水員！🎉" }
+      ],
+      4: [
+        { time: "08:00", name: "FD 兩支岸潛 (小琉球告別跳)", desc: "把握最後早晨與海龜同游" },
+        { time: "11:30", name: "還車 ➔ 搭船返回屏東東港", desc: "準備啟程前往東海岸台東中繼站" },
+        { time: "13:30", name: "方案 A：東港客運 9117 ➔ 枋寮火車站", desc: "車程約 40~50分，下車步行 3 分鐘進枋寮火車站" },
+        { time: "15:00", name: "枋寮火車站換乘台鐵自強號直達台東", desc: "火車車程約 1h 20m，沿途欣賞南迴海景" },
+        { time: "17:00", name: "入住台東「輕安漫旅電梯民宿」", desc: "Booking 預訂雙床房 ($899)，電話 +886 928-568-221" }
+      ],
+      5: [
+        { time: "08:30", name: "台東出發前往富岡漁港", desc: "叫計程車或公車至富岡碼頭取船票" },
+        { time: "09:30", name: "富岡碼頭搭船前往綠島", desc: "航程約 50 分鐘，務必提早 30 分鐘吃暈船藥" },
+        { time: "10:30", name: "抵達綠島南寮碼頭 ➔ 取機車", desc: "柴口岸代訂機車 (含免費行李接送)，起租至 11/27 14:30" },
+        { time: "11:30", name: "前往潛店 Islands Dive (島潛)", desc: "蔡冠群教練 IG 敲定集合，整理潛水裝備" },
+        { time: "13:30", name: "綠島下午岸潛兩支", desc: "感受綠島玻璃水！能見度爆表" }
+      ],
+      6: [
+        { time: "08:30", name: "綠島船潛出海！", desc: "前往外礁深場 (如鋼鐵礁燕魚、十字架)" },
+        { time: "14:00", name: "綠島下午岸潛", desc: "柴口或石朗水下郵筒寄明信片" },
+        { time: "18:30", name: "綠島大街在地美食小吃", desc: "品嚐鹿肉乾、海草冰、炸飛魚" }
+      ],
+      7: [
+        { time: "08:30", name: "綠島船潛 + 岸潛全日深度探索", desc: "感受黑潮暖流！尋找海蛇、巨型海扇與藍洞" },
+        { time: "17:00", name: "綠島朝日溫泉 (或看夕陽放空)", desc: "吹著海風放鬆身心" }
+      ],
+      8: [
+        { time: "09:00", name: "早上綠島悠閒耍廢、拍照採買伴手禮", desc: "享受無壓力的島嶼早晨，準備收拾行李" },
+        { time: "14:30", name: "碼頭還機車 (提早一小時抵達)", desc: "行李送抵碼頭，領取登船票" },
+        { time: "15:30", name: "綠島開船出發 ➔ 返回台東富岡", desc: "約 16:30 抵達台東，搭計程車直奔台東車站" },
+        { time: "17:52", name: "搭台鐵新自強號 ➔ 19:57 抵達新左營", desc: "訂票人：翁 Joyce。綠島篇圓滿結束！" }
+      ],
+      9: [
+        { time: "11:00", name: "前往墾丁 (恆春南灣)", desc: "準備前往台灣潛水 Taiwan Dive Center 報到" },
+        { time: "12:30", name: "抵達「The First 南灣膠囊旅店」放行李", desc: "密碼 99999999，找貓咪生啤酒玩" },
+        { time: "13:00", name: "台潛下午岸潛第一支", desc: "啟用已購台潛 13,500 潛券抵扣 (已先付 3,000 訂金)" },
+        { time: "15:00", name: "台潛下午岸潛第二支", desc: "後壁湖經典潛點探索" }
+      ],
+      10: [
+        { time: "07:30", name: "台潛船潛兩支 (墾丁出海！)", desc: "早晨出航探索墾丁獨立礁與壯麗珊瑚礁" },
+        { time: "11:30", name: "台潛享用美味便當午休", desc: "休息放鬆，補充水份熱量" },
+        { time: "13:00", name: "台潛下午岸潛第一支", desc: "享受恆春半島迷人水下風光" },
+        { time: "15:00", name: "台潛下午岸潛第二支", desc: "刷瓶日常！紀錄豐富微距生物" }
+      ],
+      11: [
+        { time: "08:00", name: "台潛早晨岸潛", desc: "早浪平靜，水清視線佳" },
+        { time: "14:00", name: "Wendy 張同學合流抵達南灣！🎉", desc: "Wendy 入住 The First 膠囊單人房 1 晚 ($600)" },
+        { time: "15:00", name: "三人特攻隊大合流岸潛！", desc: "Dylan、Joyce、Wendy 三人一同下潛合影比愛心！" },
+        { time: "19:00", name: "恆春夜市或海鮮大餐慶祝合流", desc: "三人大口吃肉喝熱湯，暢聊潛水趣事" }
+      ],
+      12: [
+        { time: "08:00", name: "墾丁最後清晨岸潛第一支", desc: "抓緊最後水下時光" },
+        { time: "10:00", name: "墾丁壓軸告別岸潛第二支", desc: "安全做滿 3 分鐘安全停留，完潛！" },
+        { time: "12:00", name: "洗裝備、曬乾裝備 & 台潛結算潛券", desc: "整理所有重裝與行李" },
+        { time: "15:00", name: "滿載三大海島回憶，平安賦歸！", desc: "小琉球＋綠島＋墾丁 2026 年末爛草莓特攻圓滿大成功！🍓" }
+      ]
+    };
+
+    const dayMeta = [
+      { id: 1, title: "11/20 (五)", sub: "小琉球 FD 兩支", focus: "東港搭船 ➔ 騰千取車 ➔ 志村教練 Fun Dive 兩支" },
+      { id: 2, title: "11/21 (六)", sub: "嗡嗡 AOW Day 1", focus: "頂尖中性浮力 + 水下導航 + SMB 施放實操 + 18:00 夜潛" },
+      { id: 3, title: "11/22 (日)", sub: "嗡嗡 AOW Day 2", focus: "12:20 船潛兩支高氧放流 (楊陪考) ➔ 歡慶取得證照" },
+      { id: 4, title: "11/23 (一)", sub: "小琉球 ➔ 台東", focus: "08:00 FD兩支岸潛 ➔ 枋寮轉乘台鐵 ➔ 入住台東輕安漫旅" },
+      { id: 5, title: "11/24 (二)", sub: "台東 ➔ 綠島", focus: "09:30 富岡出發 ➔ 柴口岸入住 ➔ Islands Dive 島潛下午兩支" },
+      { id: 6, title: "11/25 (三)", sub: "綠島 船潛+岸潛", focus: "Islands Dive 蔡教練帶隊 ➔ 鋼鐵礁外礁船潛與特色岸潛" },
+      { id: 7, title: "11/26 (四)", sub: "綠島 船潛+岸潛", focus: "探索綠島黑潮大深度 ➔ 朝日溫泉看星空" },
+      { id: 8, title: "11/27 (五)", sub: "綠島 ➔ 新左營", focus: "早上耍廢買伴手禮 ➔ 15:30 綠島船班 ➔ 17:52 台鐵回新左營" },
+      { id: 9, title: "12/04 (五)", sub: "墾丁 台潛岸潛", focus: "入住 The First 南灣膠囊 ➔ 台潛潛券抵扣 ➔ 下午岸潛兩支" },
+      { id: 10, title: "12/05 (六)", sub: "墾丁 船潛+岸潛", focus: "07:30 船潛兩支 ➔ 訂便當 ➔ 下午 13:00、15:00 兩支岸潛" },
+      { id: 11, title: "12/06 (日)", sub: "Wendy 合流！", focus: "08:00 岸潛 ➔ Wendy 張同學抵達加入 ➔ 15:00 三人合流跳" },
+      { id: 12, title: "12/07 (一)", sub: "墾丁 壓軸賦歸", focus: "08:00、10:00 岸潛完潛 ➔ 洗裝備結算 ➔ 平安回家" }
+    ];
+
+    let tripData = JSON.parse(JSON.stringify(defaultTripData));
+    let curDay = 1;
+
+    // 預設已發生的開銷紀錄
+    const defaultExpenses = [
+      { id: 1, name: "台潛潛券 (20岸潛+1船潛)", amount: 13500, payer: "Dylan", split: "all3" },
+      { id: 2, name: "台潛預付訂金", amount: 3000, payer: "Dylan", split: "all3" },
+      { id: 3, name: "小琉球「我們這一家」訂金 (雙人房+車票+機車)", amount: 2000, payer: "Dylan", split: "DJ" },
+      { id: 4, name: "台東「輕安漫旅」雙床房 (Booking 扣款)", amount: 899, payer: "Joyce", split: "DJ" },
+      { id: 5, name: "綠島「柴口岸」訂金 (匯款留房)", amount: 1053, payer: "Dylan", split: "DJ" },
+      { id: 6, name: "墾丁「The First 南灣膠囊」訂金 (全館預留)", amount: 1400, payer: "Dylan", split: "all3" }
+    ];
+
+    let expenses = JSON.parse(JSON.stringify(defaultExpenses));
+
     let defaultDiveLogs = [
       { id: 1, site: "小琉球 • 花瓶岩", depth: "14m", time: "52 min", note: "首日 Fun Dive，巧遇兩隻優雅大綠蠵龜，水溫舒適！" },
       { id: 2, site: "小琉球 • 杉福沉船", depth: "18m", time: "44 min", note: "夜潛導航練習，看見害羞的花枝與漂亮獅子魚。" },
@@ -879,26 +1011,40 @@
     let diveLogs = JSON.parse(JSON.stringify(defaultDiveLogs));
 
     // ================= Firebase 雲端同步核心模組 =================
+    // 預設填入你的 strawberry-dive-trip 配置
+    const defaultFirebaseConfig = {
+      apiKey: "AIzaSyAGk79NiEHBUMz5IKjw5IkS3bG81eAdlZw",
+      authDomain: "strawberry-dive-trip.firebaseapp.com",
+      projectId: "strawberry-dive-trip",
+      storageBucket: "strawberry-dive-trip.firebasestorage.app",
+      messagingSenderId: "450551796590",
+      appId: "1:450551796590:web:55a6fd1a6e2639cc0c677f"
+    };
+
     let fbApp = null;
     let fbDb = null;
     let syncDocRef = null;
 
     function initFirebaseSync() {
       const statusBadge = document.getElementById('sync-status-badge');
-      const savedConfig = localStorage.getItem('berry_firebase_config');
+      let configObj = defaultFirebaseConfig;
 
-      if (!savedConfig) {
-        if (statusBadge) statusBadge.textContent = '本機離線模式 (點設定連雲端)';
+      // 若使用者曾在設定視窗自訂儲存，優先採用 localStorage
+      const savedConfig = localStorage.getItem('berry_firebase_config');
+      if (savedConfig) {
+        try {
+          configObj = JSON.parse(savedConfig);
+        } catch (e) {
+          console.warn("Using defaultFirebaseConfig instead.");
+        }
+      }
+
+      if (typeof firebase === 'undefined') {
+        if (statusBadge) statusBadge.textContent = '本地快取模式 (SDK 未載入)';
         return;
       }
 
       try {
-        const configObj = JSON.parse(savedConfig);
-        if (typeof firebase === 'undefined') {
-          if (statusBadge) statusBadge.textContent = '本地快取模式';
-          return;
-        }
-
         if (!firebase.apps.length) {
           fbApp = firebase.initializeApp(configObj);
         } else {
@@ -907,12 +1053,12 @@
 
         fbDb = firebase.firestore();
 
-        // 匿名登入
+        // 匿名驗證
         firebase.auth().signInAnonymously().catch(e => {
           console.debug("Firebase Auth Note:", e);
         });
 
-        // 綁定爛草莓潛水專屬文件
+        // 爛草莓專屬資料庫文檔
         syncDocRef = fbDb.collection("berry_dive_trips").doc("strawberry_team");
 
         // 即時雙向監聽
@@ -941,12 +1087,12 @@
           }
         }, (error) => {
           console.warn("Firestore error:", error);
-          if (statusBadge) statusBadge.textContent = '連線受限 (請檢查規則)';
+          if (statusBadge) statusBadge.textContent = '連線受限 (請檢查 Firestore 規則)';
         });
 
       } catch (err) {
         console.error("Firebase init failed:", err);
-        if (statusBadge) statusBadge.textContent = 'Config 格式錯誤';
+        if (statusBadge) statusBadge.textContent = 'Config 設定錯誤';
       }
     }
 
@@ -974,7 +1120,7 @@
     }
 
     function openConfigModal() {
-      const savedConfig = localStorage.getItem('berry_firebase_config') || '';
+      const savedConfig = localStorage.getItem('berry_firebase_config') || JSON.stringify(defaultFirebaseConfig, null, 2);
       document.getElementById('firebase-config-input').value = savedConfig;
       document.getElementById('config-modal').classList.remove('hidden');
     }
@@ -983,13 +1129,11 @@
       let raw = document.getElementById('firebase-config-input').value.trim();
       if (!raw) return showToast('請填入 Firebase Config 內容！');
 
-      // 支援使用者直接貼 const firebaseConfig = { ... }
       if (raw.includes('{') && raw.includes('}')) {
         raw = raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1);
       }
 
       try {
-        // 修正非嚴格 JSON (例如 key 沒有引號)
         let formatted = raw.replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
         const parsed = JSON.parse(formatted);
         localStorage.setItem('berry_firebase_config', JSON.stringify(parsed));
@@ -997,7 +1141,6 @@
         showToast('✅ Firebase Config 儲存成功，正在連線...');
         initFirebaseSync();
       } catch (e) {
-        // 若正規修正失敗，嘗試以 Function 方式安全取值
         try {
           const fn = new Function(`return ${raw}`);
           const parsed = fn();
@@ -1016,8 +1159,9 @@
       document.getElementById('firebase-config-input').value = '';
       closeModal('config-modal');
       const statusBadge = document.getElementById('sync-status-badge');
-      if (statusBadge) statusBadge.textContent = '本地離線模式';
-      showToast('已清除雲端設定，恢復離線快取');
+      if (statusBadge) statusBadge.textContent = '使用預設雲端配置';
+      showToast('已恢復預設專案配置');
+      initFirebaseSync();
     }
 
     // ================= 使用者權限設定 =================
@@ -1142,7 +1286,6 @@
 
     // ================= 倒數計時器 =================
     function initCountdown() {
-      // 目標出發時間：2026-11-20 08:00
       const targetTime = new Date("2026-11-20T08:00:00+08:00").getTime();
       const endTime = new Date("2026-12-07T18:00:00+08:00").getTime();
 
@@ -1335,7 +1478,7 @@
         return;
       }
 
-      container.innerHTML = diveLogs.slice().reverse().map((log, idx) => `
+      container.innerHTML = diveLogs.slice().reverse().map((log) => `
         <div class="bg-white rounded-2xl p-3 comic-box-md flex flex-col justify-between text-xs font-bold shadow-comic-sm space-y-1.5">
           <div class="flex items-center justify-between">
             <span class="font-black text-sm text-comicBorder flex items-center gap-1">
@@ -1402,21 +1545,17 @@
         const val = parseFloat(e.amount) || 0;
         total += val;
 
-        // 墊付人記錄
         if (paid[e.payer] !== undefined) {
           paid[e.payer] += val;
         }
 
-        // 分攤模式計算
         const split = e.split || 'all3';
         if (split === 'all3') {
-          // 三人平分
           const share = val / 3;
           burden.Dylan += share;
           burden.Joyce += share;
           burden.Wendy += share;
         } else if (split === 'DJ') {
-          // Dylan 與 Joyce 兩人平分 (前段小琉球與綠島)
           const share = val / 2;
           burden.Dylan += share;
           burden.Joyce += share;
@@ -1434,16 +1573,14 @@
       document.getElementById('joyce-burden').textContent = `NT$ ${Math.round(burden.Joyce).toLocaleString()}`;
       document.getElementById('wendy-burden').textContent = `NT$ ${Math.round(burden.Wendy).toLocaleString()}`;
 
-      // 結算 netBalance = 實付 - 應付 (大於 0 代表墊付多應收回，小於 0 代表應補給他人)
       const net = {
         Dylan: paid.Dylan - burden.Dylan,
         Joyce: paid.Joyce - burden.Joyce,
         Wendy: paid.Wendy - burden.Wendy
       };
 
-      // 計算誰轉給誰的轉帳演算法
-      let debtors = [];   // net < 0 (需給錢)
-      let creditors = []; // net > 0 (應收錢)
+      let debtors = [];
+      let creditors = [];
 
       for (const [name, amount] of Object.entries(net)) {
         if (amount < -1) {
@@ -1490,7 +1627,6 @@
         `).join('') + `<div class="text-[10px] text-subGray font-normal mt-1 border-t border-comicBorder/10 pt-1">（實付：Dylan $${Math.round(paid.Dylan)}、Joyce $${Math.round(paid.Joyce)}、Wendy $${Math.round(paid.Wendy)}）</div>`;
       }
 
-      // 渲染開銷卡片
       const listEl = document.getElementById('expense-records');
       listEl.innerHTML = expenses.slice().reverse().map(e => {
         let splitLabel = '';
@@ -1657,7 +1793,7 @@
       renderDiveLogs();
       if (window.lucide) lucide.createIcons();
 
-      // 啟動 Firebase 雲端雙向監聽
+      // 自動連線至你的 Firebase 專案
       initFirebaseSync();
     });
   </script>
