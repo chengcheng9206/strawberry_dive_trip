@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>爛草莓潛水特攻隊 • 小琉球｜綠島｜墾丁</title>
+  
+  <!-- iOS PWA 支援 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="爛草莓潛水">
+  <meta name="theme-color" content="#faf7ee">
+
+  <!-- Google Fonts: 圓潤手繪感與數字等寬字體 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Firebase 經典相容版 SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            appBg: '#faf7ee',
+            appYellow: '#ffd867',
+            appCardYellow: '#ffe289',
+            comicBorder: '#232323',
+            subGray: '#666666',
+            strawberry: '#ff5c7c',
+            strawPink: '#ffe4ea',
+            seaBlue: '#9ce0f5',
+            seaDeep: '#2ba8db',
+            oceanNavy: '#1b4b72'
+          },
+          fontFamily: {
+            sans: ['"Zen Maru Gothic"', 'system-ui', 'sans-serif'],
+            mono: ['"Nunito"', 'monospace'],
+          },
+          boxShadow: {
+            'comic': '0 3.5px 0 #232323',
+            'comic-sm': '0 2px 0 #232323',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      box-sizing: border-box;
+    }
+    html, body {
+      background-color: #faf7ee;
+      font-family: 'Zen Maru Gothic', sans-serif;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100vh;
+      color: #232323;
+    }
+    .comic-box {
+      border: 3px solid #232323;
+      border-radius: 28px;
+    }
+    .comic-box-md {
+      border: 2.5px solid #232323;
+      border-radius: 20px;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    @keyframes bubbleUp {
+      0% { transform: translateY(0) scale(0.6); opacity: 1; }
+      100% { transform: translateY(-40px) scale(1.2); opacity: 0; }
+    }
+    .bubble-drop {
+      position: absolute;
+      pointer-events: none;
+      animation: bubbleUp 0.8s ease-out forwards;
+      font-size: 20px;
+    }
+    @keyframes diverKick {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-6deg); }
+    }
+    .animate-diver {
+      animation: diverKick 2.4s ease-in-out infinite;
+      transform-origin: center;
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen bg-appBg">
+
+  <!-- 滿版 App 內容容器 -->
+  <div class="w-full max-w-5xl mx-auto flex-1 flex flex-col px-3 sm:px-6 md:px-8 pt-3 pb-28">
+
+    <!-- 頂部標題列 -->
+    <header class="flex items-start justify-between mb-3 px-1">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-black text-comicBorder tracking-tight flex items-center gap-1.5 flex-wrap">
+          <span>爛草莓潛水特攻隊</span>
+          <span class="inline-flex text-2xl">🍓🤿🌊</span>
+        </h1>
+        <div class="text-[13px] font-bold text-subGray mt-1 flex items-center gap-1.5 flex-wrap">
+          <span>11/20 - 12/07</span>
+          <span>•</span>
+          <span>小琉球 ➔ 綠島 ➔ 墾丁</span>
+          <span>•</span>
+          <span class="text-comicBorder font-black">Dylan ‧ Joyce ‧ Wendy</span>
+        </div>
+        <!-- 旅伴模式狀態標籤 -->
+        <div class="inline-flex items-center gap-1.5 bg-[#eaf8f1] border-2 border-[#54c489] text-[#1e8b4e] px-2.5 py-0.5 rounded-full text-xs font-black mt-1.5">
+          <span class="w-2 h-2 rounded-full bg-[#1e8b4e] animate-pulse"></span>
+          <span id="sync-status-badge">本地離線儲存模式 (隨時可記帳)</span>
+        </div>
+      </div>
+
+      <!-- 右上角功能按鈕群 -->
+      <div class="flex items-center gap-2 mt-0.5 shrink-0">
+        <button onclick="openConfigModal()" id="btn-firebase-cfg" class="h-11 px-2.5 rounded-full comic-box bg-white flex items-center justify-center gap-1 hover:bg-neutral-50 active:scale-95 transition-transform shadow-comic-sm text-xs font-black" title="設定 Firebase 雲端金鑰">
+          <span>⚙️</span>
+          <span class="hidden sm:inline">設定雲端</span>
+        </button>
+
+        <button onclick="openAuthModal()" id="btn-auth-lock" class="h-11 px-3 rounded-full comic-box bg-white flex items-center justify-center gap-1.5 hover:bg-neutral-50 active:scale-95 transition-transform shadow-comic-sm text-xs font-black">
+          <span id="auth-lock-icon">🔒</span>
+          <span id="auth-user-label">解鎖編輯</span>
+        </button>
+
+        <button onclick="shareTrip()" class="w-11 h-11 rounded-full comic-box bg-white flex items-center justify-center hover:bg-neutral-50 active:scale-95 transition-transform shrink-0 shadow-comic-sm" title="複製連結">
+          <i data-lucide="share-2" class="w-5 h-5 text-comicBorder"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ========================= TAB 1: 首頁 ========================= -->
+    <div id="tab-home" class="space-y-3.5">
+      <!-- 核心插畫卡片 (點擊海島餵草莓與吐泡泡) -->
+      <div class="comic-box bg-[#a7e7fb] overflow-hidden relative cursor-pointer select-none max-h-[380px] flex items-center justify-center" onclick="dropStrawberryBubble(event)" title="點擊蔚藍大海釋放泡泡與草莓！">
+        <svg viewBox="0 0 400 240" class="w-full h-auto max-h-[360px] block object-contain" xmlns="http://www.w3.org/2000/svg">
+          <!-- 海洋背景 -->
+          <rect width="400" height="240" fill="#a0e3fa"/>
+          
+          <!-- 水溫標籤 -->
+          <g transform="translate(16, 14)">
+            <rect width="118" height="24" rx="12" fill="#FFFFFF" stroke="#232323" stroke-width="2.2"/>
+            <text x="12" y="16" font-family="'Zen Maru Gothic', sans-serif" font-size="11" font-weight="900" fill="#232323">🌊 水溫舒適 26° C</text>
+          </g>
+
+          <!-- 太陽 -->
+          <g transform="translate(350, 32)">
+            <circle cx="0" cy="0" r="17" fill="#FCD34D" stroke="#232323" stroke-width="2.4"/>
+            <path d="M -7 -6 A 10 10 0 0 1 6 -7" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </g>
+
+          <!-- 遠景島嶼：花瓶岩與綠島山稜 -->
+          <g stroke="#232323" stroke-width="2.6" stroke-linejoin="round">
+            <path d="M 60 170 Q 100 130 145 170 Z" fill="#6ee7b7"/>
+            <path d="M 125 170 Q 170 110 230 170 Z" fill="#34d399"/>
+            <!-- 花瓶岩柱造型 -->
+            <path d="M 270 172 C 265 145 285 130 300 130 C 315 130 335 145 330 172 Z" fill="#fcd34d"/>
+            <path d="M 275 135 Q 300 115 325 135 Z" fill="#10b981"/>
+          </g>
+
+          <!-- 深海水層 -->
+          <path d="M 0 165 Q 110 152 220 162 Q 320 172 400 158 L 400 240 L 0 240 Z" fill="#38bdf8" stroke="#232323" stroke-width="3"/>
+          <path d="M 0 198 Q 120 185 240 198 Q 330 206 400 194 L 400 240 L 0 240 Z" fill="#0284c7" stroke="#232323" stroke-width="3"/>
+
+          <!-- 悠游海龜 (小琉球標誌) -->
+          <g id="turtle-el" transform="translate(42, 172)" class="animate-diver">
+            <ellipse cx="16" cy="14" rx="13" ry="10" fill="#6ee7b7" stroke="#232323" stroke-width="2.4"/>
+            <circle cx="16" cy="14" r="5.5" fill="#10b981" stroke="#232323" stroke-width="1.6"/>
+            <!-- 龜頭與眼睛 -->
+            <circle cx="31" cy="11" r="4.2" fill="#6ee7b7" stroke="#232323" stroke-width="2"/>
+            <circle cx="32" cy="10" r="1.2" fill="#232323"/>
+            <!-- 龜鰭四肢 -->
+            <ellipse cx="12" cy="4" rx="4.5" ry="2.2" fill="#6ee7b7" stroke="#232323" stroke-width="1.8"/>
+            <ellipse cx="23" cy="5" rx="4.5" ry="2.2" fill="#6ee7b7" stroke="#232323" stroke-width="1.8"/>
+            <ellipse cx="9" cy="22" rx="3.5" ry="2" fill="#6ee7b7" stroke="#232323" stroke-width="1.8"/>
+            <ellipse cx="22" cy="22" rx="3.5" ry="2" fill="#6ee7b7" stroke="#232323" stroke-width="1.8"/>
+          </g>
+
+          <!-- 潛水員 1：Dylan (氣瓶背著、比讚) -->
+          <g id="diver-dylan" transform="translate(130, 142)">
+            <!-- 氣瓶 -->
+            <rect x="0" y="16" width="6" height="15" rx="3" fill="#f59e0b" stroke="#232323" stroke-width="1.8"/>
+            <circle cx="14" cy="12" r="7" fill="#FFDFC4" stroke="#232323" stroke-width="2"/>
+            <!-- 面鏡與呼吸管 -->
+            <rect x="12" y="9" width="8" height="5" rx="2" fill="#38bdf8" stroke="#232323" stroke-width="1.6"/>
+            <path d="M 17 14 L 17 22 L 13 22" fill="none" stroke="#232323" stroke-width="1.5"/>
+            <!-- 防寒衣 -->
+            <rect x="7" y="19" width="12" height="15" rx="3" fill="#1e293b" stroke="#232323" stroke-width="2"/>
+            <!-- 雙腿蛙鞋 -->
+            <line x1="9" y1="34" x2="6" y2="44" stroke="#232323" stroke-width="2.2" stroke-linecap="round"/>
+            <line x1="15" y1="34" x2="18" y2="44" stroke="#232323" stroke-width="2.2" stroke-linecap="round"/>
+            <polygon points="3,44 7,44 1,50" fill="#f43f5e" stroke="#232323" stroke-width="1.5"/>
+            <polygon points="17,44 21,44 23,50" fill="#f43f5e" stroke="#232323" stroke-width="1.5"/>
+            <text x="13" y="29" font-size="6.5" font-weight="900" fill="#ffffff" text-anchor="middle">D</text>
+          </g>
+
+          <!-- 潛水員 2：Joyce (嗡嗡考 AOW 施放 SMB 浮力袋) -->
+          <g id="diver-joyce" transform="translate(195, 138)">
+            <!-- 浮力袋 SMB 線長長延伸上去 -->
+            <line x1="14" y1="12" x2="14" y2="-45" stroke="#ff2d55" stroke-width="1.8" stroke-dasharray="2 2"/>
+            <rect x="11" y="-55" width="6" height="22" rx="3" fill="#ff4d4d" stroke="#232323" stroke-width="1.6"/>
+            <text x="14" y="-40" font-size="5" fill="#fff" font-weight="900" text-anchor="middle">SMB</text>
+
+            <rect x="0" y="15" width="6" height="15" rx="3" fill="#10b981" stroke="#232323" stroke-width="1.8"/>
+            <circle cx="14" cy="12" r="7" fill="#FFDFC4" stroke="#232323" stroke-width="2"/>
+            <rect x="13" y="9" width="8" height="5" rx="2" fill="#ffd867" stroke="#232323" stroke-width="1.6"/>
+            <!-- 水母衣紫粉 -->
+            <rect x="7" y="19" width="12" height="15" rx="3" fill="#d946ef" stroke="#232323" stroke-width="2"/>
+            <line x1="9" y1="34" x2="7" y2="45" stroke="#232323" stroke-width="2.2" stroke-linecap="round"/>
+            <line x1="16" y1="34" x2="19" y2="45" stroke="#232323" stroke-width="2.2" stroke-linecap="round"/>
+            <polygon points="3,45 8,45 3,51" fill="#ec4899" stroke="#232323" stroke-width="1.5"/>
+            <polygon points="17,45 22,45 23,51" fill="#ec4899" stroke="#232323" stroke-width="1.5"/>
+            <text x="13" y="29" font-size="6.5" font-weight="900" fill="#ffffff" text-anchor="middle">J</text>
+          </g>
+
+          <!-- 潛水員 3：Wendy (墾丁加入張同學) -->
+          <g id="diver-wendy" transform="translate(260, 145)">
+            <rect x="0" y="16" width="6" height="15" rx="3" fill="#38bdf8" stroke="#232323" stroke-width="1.8"/>
+            <circle cx="14" cy="12" r="7" fill="#FFDFC4" stroke="#232323" stroke-width="2"/>
+            <rect x="12" y="9" width="8" height="5" rx="2" fill="#f43f5e" stroke="#232323" stroke-width="1.6"/>
+            <rect x="7" y="19" width="12" height="15" rx="3" fill="#0284c7" stroke="#232323" stroke-width="2"/>
+            <line x1="9" y1="34" x2="6" y2="44" stroke="#232323" stroke-width="2.2" stroke-linecap="round"/>
+            <line x1="15" y1="34" x2="18" y2="44" stroke="#232323" stroke-width="2.2" stroke-linecap="round"/>
+            <polygon points="3,44 7,44 1,50" fill="#0ea5e9" stroke="#232323" stroke-width="1.5"/>
+            <polygon points="17,44 21,44 23,50" fill="#0ea5e9" stroke="#232323" stroke-width="1.5"/>
+            <text x="13" y="29" font-size="6.5" font-weight="900" fill="#ffffff" text-anchor="middle">W</text>
+          </g>
+        </svg>
+
+        <div id="bubble-container" class="absolute inset-0 pointer-events-none"></div>
+
+        <div class="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-[92%] max-w-sm">
+          <div class="bg-white/95 backdrop-blur-sm comic-box-md py-1.5 px-3 text-center shadow-comic-sm">
+            <span class="text-xs font-black text-comicBorder flex items-center justify-center gap-1">
+              <span class="text-rose-500">🍓</span>
+              <span>點擊大海看海龜吐泡泡 ‧ 一起下潛探險</span>
+              <span class="text-blue-500">🫧</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 出發倒數卡片 -->
+      <div class="bg-appYellow comic-box p-4 text-center shadow-comic-sm space-y-1">
+        <div class="text-[11px] font-black tracking-widest text-comicBorder font-mono uppercase">
+          COUNTDOWN TO LIUQIU • GREEN ISLAND • KENTING
+        </div>
+        <div class="text-xs font-black text-comicBorder" id="cd-title">
+          距離小琉球第一跳出發還有
+        </div>
+        <div class="pt-1 flex items-baseline justify-center gap-1.5 sm:gap-2">
+          <span class="text-3xl sm:text-4xl font-black font-sans text-comicBorder tracking-tight" id="cd-day">--</span>
+          <span class="text-lg sm:text-xl font-black text-comicBorder">天</span>
+          <span class="text-xl sm:text-2xl font-black font-mono text-comicBorder" id="cd-hour">--</span>
+          <span class="text-xs font-black text-comicBorder">時</span>
+          <span class="text-xl sm:text-2xl font-black font-mono text-comicBorder" id="cd-min">--</span>
+          <span class="text-xs font-black text-comicBorder">分</span>
+          <span class="text-xl sm:text-2xl font-black font-mono text-comicBorder" id="cd-sec">--</span>
+          <span class="text-xs font-black text-comicBorder">秒</span>
+        </div>
+      </div>
+
+      <!-- 三大潛水戰區總覽 -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <!-- 小琉球 -->
+        <div class="bg-white comic-box p-3.5 shadow-comic-sm space-y-2 border-l-8 border-l-emerald-400">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-300">Phase 1</span>
+            <span class="text-[11px] font-bold text-subGray">11/20 - 11/23</span>
+          </div>
+          <div class="text-sm font-black text-comicBorder flex items-center gap-1">
+            <span>🐢 小琉球探險</span>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            志村教練同行！嗡嗡 AOW 考照 (頂尖中性浮力、SMB 浮力袋、夜潛、高氧船潛放流)，楊曜丞全程陪考。
+          </p>
+        </div>
+
+        <!-- 綠島 -->
+        <div class="bg-white comic-box p-3.5 shadow-comic-sm space-y-2 border-l-8 border-l-sky-400">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-black bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full border border-sky-300">Phase 2</span>
+            <span class="text-[11px] font-bold text-subGray">11/24 - 11/27</span>
+          </div>
+          <div class="text-sm font-black text-comicBorder flex items-center gap-1">
+            <span>🏝️ 綠島大深度</span>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            Islands Dive 島潛 (蔡冠群教練 IG 敲定)！超強玻璃水質，船潛+岸潛全包，最後一天爽爽耍廢吃美食出島。
+          </p>
+        </div>
+
+        <!-- 墾丁 -->
+        <div class="bg-white comic-box p-3.5 shadow-comic-sm space-y-2 border-l-8 border-l-rose-400">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-black bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full border border-rose-300">Phase 3</span>
+            <span class="text-[11px] font-bold text-subGray">12/04 - 12/07</span>
+          </div>
+          <div class="text-sm font-black text-comicBorder flex items-center gap-1">
+            <span>🤿 墾丁大會合</span>
+          </div>
+          <p class="text-xs text-subGray font-bold leading-relaxed">
+            台灣潛水 (台潛潛券 13,500 元超爽刷瓶)！Wendy 張 12/6-7 週末盛大合流，南灣膠囊享受海景放鬆時光。
+          </p>
+        </div>
+      </div>
+
+      <!-- 四大住宿清單卡片 -->
+      <div class="bg-white comic-box p-4 shadow-comic-sm space-y-3">
+        <div class="flex items-center justify-between border-b-2 border-neutral-100 pb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🏨</span>
+            <span class="text-sm font-black text-comicBorder">住宿清單 & 取票代訂資訊</span>
+          </div>
+          <span class="text-xs font-bold text-[#1e8b4e]">✓ 訂金皆已安排</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <!-- 1. 我們這一家 -->
+          <div class="bg-[#faf7ee] p-3 rounded-2xl border-2 border-comicBorder space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-comicBorder text-sm">1. 我們這一家 (小琉球)</span>
+              <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-black border border-emerald-300">3 晚 • 11/20-23</span>
+            </div>
+            <div class="text-subGray font-bold">柚子雙人房 + 來回全票2張 + 機車1台 + 早餐券</div>
+            <div class="text-comicBorder font-bold text-[11px]">
+              總額 $8,400 (已匯訂金 $2,000) ‧ 取票人：楊曜丞 0958272963
+            </div>
+            <div class="text-[11px] text-subGray">
+              🛵 機車行：騰千機車行 (0905-952-035) 開船後告知船名，可幫載大行李。
+            </div>
+          </div>
+
+          <!-- 2. 輕安漫旅 -->
+          <div class="bg-[#faf7ee] p-3 rounded-2xl border-2 border-comicBorder space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-comicBorder text-sm">2. 輕安漫旅電梯民宿 (台東)</span>
+              <span class="text-[10px] bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded font-black border border-amber-300">中繼 1 晚 • 11/23-24</span>
+            </div>
+            <div class="text-subGray font-bold">Booking 預訂雙床房－附衛浴 (15:00~18:00 入住)</div>
+            <div class="text-comicBorder font-bold text-[11px]">
+              總價 TWD 899 (不可退款，房費由信用卡扣款)
+            </div>
+            <div class="text-[11px] text-subGray">
+              📞 民宿電話：+886 928-568-221 ‧ 隔日一早 9:30 前往富岡碼頭進綠島。
+            </div>
+          </div>
+
+          <!-- 3. 柴口岸 -->
+          <div class="bg-[#faf7ee] p-3 rounded-2xl border-2 border-comicBorder space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-comicBorder text-sm">3. 柴口岸 Chaikuo Waterfront (綠島)</span>
+              <span class="text-[10px] bg-sky-100 text-sky-900 px-1.5 py-0.5 rounded font-black border border-sky-300">3 晚 • 11/24-27</span>
+            </div>
+            <div class="text-subGray font-bold">標準雙床房 (總價 $3,510，已匯訂金 $1,053)</div>
+            <div class="text-comicBorder font-bold text-[11px]">
+              已訂機車 3 天半 (11/24 10:30 上島起租至 11/27 14:30，含行李免費接送)
+            </div>
+            <div class="text-[11px] text-subGray">
+              ⚠️ 貨櫃屋隔音較薄，請自備個人牙刷毛巾與浴巾；有交誼廳與曬衣場。
+            </div>
+          </div>
+
+          <!-- 4. The First 南灣膠囊 -->
+          <div class="bg-[#faf7ee] p-3 rounded-2xl border-2 border-comicBorder space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-comicBorder text-sm">4. The First 南灣膠囊旅店 (墾丁)</span>
+              <span class="text-[10px] bg-purple-100 text-purple-900 px-1.5 py-0.5 rounded font-black border border-purple-300">3 晚 • 12/04-07</span>
+            </div>
+            <div class="text-subGray font-bold">10人混合宿舍之單人膠囊房 (Dylan+Joyce 3晚, Wendy 12/6 入住1晚)</div>
+            <div class="text-comicBorder font-bold text-[11px]">
+              總房價 $4,400 (已匯訂金 $1,400) ‧ 密碼 99999999
+            </div>
+            <div class="text-[11px] text-subGray">
+              🐱 館內有店貓「生啤酒」！走路 3 分鐘有機車行，對面有免費停車格。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================= TAB 2: 行程日曆 ========================= -->
+    <div id="tab-itinerary" class="hidden space-y-3">
+      <div class="flex items-center justify-between px-1">
+        <div>
+          <h2 class="text-xl font-black text-comicBorder">潛水特攻隊全行程 🤿</h2>
+          <div class="text-[11px] text-subGray font-bold">點選上方日期查看，隨時掌握潛水與考照進度！</div>
+        </div>
+        <button onclick="openAddSpotModal()" class="comic-box-md bg-appYellow px-3 py-1.5 text-xs font-black shadow-comic-sm active:scale-95">
+          ＋ 新增行程
+        </button>
+      </div>
+
+      <!-- 日期滑動選擇條 -->
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" id="days-nav-scroll">
+        <!-- JS 動態生成所有天數按鈕 -->
+      </div>
+
+      <div id="day-theme-banner" class="bg-[#f0f9ff] border-2 border-[#bae6fd] rounded-2xl p-2.5 px-3 flex items-center justify-between">
+        <span class="text-xs font-black text-[#0369a1]" id="day-theme-title">今日重點載入中...</span>
+        <span class="text-[11px] font-black text-comicBorder bg-white px-2 py-0.5 rounded border border-[#bae6fd]" id="day-theme-badge">Day 1</span>
+      </div>
+
+      <!-- 行程內容容器 -->
+      <div id="day-spots-container" class="bg-white comic-box p-4 shadow-comic-sm space-y-3"></div>
+    </div>
+
+    <!-- ========================= TAB 3: 潛水日誌 ========================= -->
+    <div id="tab-dive" class="hidden space-y-3">
+      <div class="px-1 flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-black text-comicBorder">潛點與裝備總覽 🌊</h2>
+          <div class="text-xs text-subGray font-bold mt-0.5">小琉球 ‧ 綠島 ‧ 墾丁台潛潛券扣抵狀況</div>
+        </div>
+        <button onclick="openAddDiveModal()" class="comic-box-md bg-appYellow px-3 py-1.5 text-xs font-black shadow-comic-sm active:scale-95">
+          ＋ 記一潛 Log
+        </button>
+      </div>
+
+      <!-- 潛券餘額卡片 -->
+      <div class="bg-white comic-box p-4 shadow-comic-sm space-y-2">
+        <div class="flex items-center justify-between border-b-2 border-neutral-100 pb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🎟️</span>
+            <span class="text-sm font-black text-comicBorder">台灣潛水 (墾丁) 潛券套票追蹤</span>
+          </div>
+          <span class="text-xs font-black bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full border border-rose-300">已付 $13,500</span>
+        </div>
+        <div class="text-xs font-bold text-subGray leading-relaxed">
+          楊曜丞已先付台潛 3,000 元訂金，並購買台潛潛券 13,500 元（包含 20 趟岸潛 + 1 趟船潛）。已通知台潛準備抵用！
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
+          <div class="bg-[#faf7ee] p-2.5 rounded-xl border border-comicBorder">
+            <span class="text-subGray text-[10px] block">預計岸潛次數</span>
+            <span class="text-lg font-black text-comicBorder">7 支岸潛</span>
+          </div>
+          <div class="bg-[#faf7ee] p-2.5 rounded-xl border border-comicBorder">
+            <span class="text-subGray text-[10px] block">預計船潛趟數</span>
+            <span class="text-lg font-black text-comicBorder">1 趟 (2支)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 考照重點提醒 -->
+      <div class="bg-white comic-box p-4 shadow-comic-sm space-y-2.5">
+        <div class="flex items-center gap-2 border-b-2 border-neutral-100 pb-2">
+          <span class="text-lg">🎓</span>
+          <span class="text-sm font-black text-comicBorder">嗡嗡 AOW 進階開放水域考照檢核 (小琉球)</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-bold text-comicBorder">
+          <label class="flex items-center gap-2 p-2 bg-[#faf7ee] rounded-xl border border-comicBorder cursor-pointer">
+            <input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded">
+            <span>Day 1：頂尖中性浮力 (PPB)</span>
+          </label>
+          <label class="flex items-center gap-2 p-2 bg-[#faf7ee] rounded-xl border border-comicBorder cursor-pointer">
+            <input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded">
+            <span>Day 1：水下導航 (Navigation)</span>
+          </label>
+          <label class="flex items-center gap-2 p-2 bg-[#faf7ee] rounded-xl border border-comicBorder cursor-pointer">
+            <input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded">
+            <span>Day 1：浮力袋 (SMB) 施放實操</span>
+          </label>
+          <label class="flex items-center gap-2 p-2 bg-[#faf7ee] rounded-xl border border-comicBorder cursor-pointer">
+            <input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded">
+            <span>Day 1：夜潛 (Night Dive 18:00)</span>
+          </label>
+          <label class="flex items-center gap-2 p-2 bg-[#faf7ee] rounded-xl border border-comicBorder cursor-pointer">
+            <input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded">
+            <span>Day 2：高氧船潛兩支放流 (Drift)</span>
+          </label>
+          <label class="flex items-center gap-2 p-2 bg-[#faf7ee] rounded-xl border border-comicBorder cursor-pointer">
+            <input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded">
+            <span>Day 3：教練簽核取得 AOW 證照！🎉</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 潛水日誌卡片清單 -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs font-black text-comicBorder px-1">
+          <span>累積潛水記錄 (Dive Logs)</span>
+          <span id="dive-count-badge" class="text-[11px] text-subGray font-normal">共 4 筆預載</span>
+        </div>
+        <div id="dive-log-list" class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          <!-- JS 渲染 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================= TAB 4: 記帳分頁 ========================= -->
+    <div id="tab-expense" class="hidden space-y-3.5">
+      <div class="flex items-center justify-between px-1">
+        <h2 class="text-xl font-black text-comicBorder">特攻隊公積金 & 拆帳 💰</h2>
+        <div class="flex items-center gap-2">
+          <button onclick="forceManualCloudSync()" class="comic-box-md bg-white hover:bg-neutral-50 px-2.5 py-1.5 text-xs font-black shadow-comic-sm active:scale-95" title="強制手動更新雲端">
+            🔄 同步
+          </button>
+          <button onclick="openExpenseModal()" class="comic-box-md bg-appYellow px-3.5 py-1.5 text-xs font-black shadow-comic-sm active:scale-95">
+            ＋ 記一筆
+          </button>
+        </div>
+      </div>
+
+      <!-- 統計與拆帳資訊 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- 總額卡片 -->
+        <div class="bg-appYellow comic-box p-4 shadow-comic-sm flex flex-col justify-between">
+          <div class="flex justify-between items-center text-xs font-black text-comicBorder">
+            <span>隊員：Dylan ‧ Joyce ‧ Wendy</span>
+            <span class="bg-white px-2 py-0.5 rounded-full border border-comicBorder text-[10px]">TWD 新台幣</span>
+          </div>
+          <div class="mt-3 pt-2 border-t-2 border-comicBorder/20">
+            <div class="text-[11px] font-bold text-comicBorder/70">旅程目前總支出</div>
+            <div class="text-3xl font-black font-mono text-comicBorder">NT$ <span id="exp-total-twd">0</span></div>
+          </div>
+          <!-- 三人各自應負擔總額 -->
+          <div class="grid grid-cols-3 gap-1.5 mt-2 pt-2 border-t border-comicBorder/15 text-[11px] font-bold text-comicBorder">
+            <div class="bg-white/60 p-1.5 rounded-xl border border-comicBorder/30">
+              <span class="block text-subGray text-[10px]">Dylan 負擔</span>
+              <span id="dylan-burden" class="font-mono font-black text-xs">NT$ 0</span>
+            </div>
+            <div class="bg-white/60 p-1.5 rounded-xl border border-comicBorder/30">
+              <span class="block text-subGray text-[10px]">Joyce 負擔</span>
+              <span id="joyce-burden" class="font-mono font-black text-xs">NT$ 0</span>
+            </div>
+            <div class="bg-white/60 p-1.5 rounded-xl border border-comicBorder/30">
+              <span class="block text-subGray text-[10px]">Wendy 負擔</span>
+              <span id="wendy-burden" class="font-mono font-black text-xs">NT$ 0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 帳務結算卡片 (精密計算：多退少補轉帳建議) -->
+        <div class="bg-white comic-box p-3.5 shadow-comic-sm space-y-2 flex flex-col justify-between">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-black text-comicBorder flex items-center gap-1">
+              <span>🧾</span> 精密清算建議 (誰該轉給誰)
+            </span>
+            <button onclick="copySplitResult()" class="text-xs font-black text-comicBorder underline hover:text-rose-600">
+              一鍵複製傳 LINE 群
+            </button>
+          </div>
+          <div id="settlement-detail" class="text-xs font-bold bg-[#faf7ee] p-3 rounded-2xl border-2 border-comicBorder text-comicBorder leading-relaxed flex-1 flex flex-col justify-center">
+            計算中...
+          </div>
+        </div>
+      </div>
+
+      <!-- 開銷明細列表 -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs font-black text-comicBorder px-1">
+          <span>費用記錄列表</span>
+          <span class="text-[10px] text-subGray font-normal">支援單獨個人負擔、雙人分攤、三人平攤</span>
+        </div>
+        <div id="expense-records" class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <!-- JS 渲染 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================= TAB 5: 交通指南 ========================= -->
+    <div id="tab-transit" class="hidden space-y-3">
+      <div class="px-1">
+        <h2 class="text-xl font-black text-comicBorder">海陸空交通全指南 🚢🚂</h2>
+        <div class="text-xs text-subGray font-bold mt-0.5">東港客運轉台鐵、綠島船班接駁與租車聯絡！</div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- 11/23 東港至台東轉乘方案 -->
+        <div class="bg-white comic-box p-4 shadow-comic-sm space-y-2.5 text-xs font-bold text-comicBorder">
+          <div class="flex items-center justify-between border-b-2 border-neutral-100 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">🚉</span>
+              <div>
+                <div class="text-sm font-black">11/23 東港 ➔ 台東 轉乘方案</div>
+                <div class="text-subGray text-[11px]">預計下船當天現場購票</div>
+              </div>
+            </div>
+            <span class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-black border border-emerald-300">推薦方案 A</span>
+          </div>
+
+          <div class="bg-[#f0f9ff] p-2.5 rounded-xl border border-sky-200 space-y-1">
+            <div class="text-sky-900 font-black text-xs">⭐ 方案 A：經枋寮站轉乘（最快、最順路）</div>
+            <div class="text-subGray text-[11px] leading-relaxed">
+              1. <strong>客運</strong>：東港轉運站搭 9117 / 9117A 往枋寮 (40~50分)<br>
+              2. <strong>步行</strong>：下車走 3 分鐘進枋寮火車站<br>
+              3. <strong>台鐵</strong>：轉自強號/新自強號直達台東 (約 1h 20m)<br>
+              💰 總車程約 2h 15m，票價總計約 376 元。
+            </div>
+          </div>
+
+          <div class="bg-[#faf7ee] p-2.5 rounded-xl border border-amber-200 space-y-1">
+            <div class="text-amber-900 font-black text-xs">方案 B：經潮州站轉乘（班次多、大站好候車）</div>
+            <div class="text-subGray text-[11px] leading-relaxed">
+              東港搭 519 或 8213/8215 到潮州轉運站 (30~40分)，過馬路進站換台鐵直達台東 (約 1h 40m)。總票價約 430 元。
+            </div>
+          </div>
+        </div>
+
+        <!-- 綠島船班與回程火車 -->
+        <div class="bg-white comic-box p-4 shadow-comic-sm space-y-2.5 text-xs font-bold text-comicBorder">
+          <div class="flex items-center gap-2 border-b-2 border-neutral-100 pb-2">
+            <span class="text-2xl">🚢</span>
+            <div>
+              <div class="text-sm font-black">綠島船班 ＆ 返程接駁列車</div>
+              <div class="text-subGray text-[11px]">富岡漁港 ⇄ 綠島南寮碼頭</div>
+            </div>
+          </div>
+          <ul class="list-disc pl-4 space-y-1.5 text-subGray text-[11px]">
+            <li><strong>11/24 入島去程</strong>：09:30 台東富岡漁港出發 ➔ 預計 10:30 綠島上島取機車。</li>
+            <li><strong>11/27 出島回程</strong>：15:30 綠島出發 ➔ 約 16:30 抵達台東富岡碼頭。</li>
+            <li><strong>11/27 返高台鐵</strong>：搭計程車抵達台東車站，搭乘 <strong>17:52 台東 ➔ 19:57 新左營</strong> (訂票人：翁 Joyce)。</li>
+            <li><strong>機車預約</strong>：綠島柴口岸代訂，11/24 10:30 ~ 11/27 14:30 碼頭還車，含免費行李接送。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================= TAB 6: 裝備清單 ========================= -->
+    <div id="tab-pack" class="hidden space-y-3">
+      <div class="px-1">
+        <h2 class="text-xl font-black text-comicBorder">潛水與出遊裝備檢查 🎒</h2>
+        <div class="text-xs text-subGray font-bold mt-0.5">出發前逐項確認，絕不漏帶重要證件與潛水重裝！</div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <!-- 證件與卡片 -->
+        <div class="bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="font-black text-xs text-comicBorder flex items-center gap-1.5 pb-1 border-b border-neutral-100">
+            <span>💳</span> 【證件與訂單憑證】
+          </div>
+          <div class="grid grid-cols-1 gap-1.5 text-xs font-bold text-comicBorder">
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>健保卡、身分證、汽機車駕照</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>OW / AOW 潛水證照 (App 或卡片)</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>台潛潛券已購證明 (13,500元)</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>我們這一家訂金匯款截圖 ($2,000)</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>柴口岸訂金截圖 ($1,053)</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>The First 南灣訂金截圖 ($1,400)</span></label>
+          </div>
+        </div>
+
+        <!-- 潛水裝備 -->
+        <div class="bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="font-black text-xs text-comicBorder flex items-center gap-1.5 pb-1 border-b border-neutral-100">
+            <span>🤿</span> 【潛水個人裝備】
+          </div>
+          <div class="grid grid-cols-1 gap-1.5 text-xs font-bold text-comicBorder">
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>面鏡、呼吸管 (含除霧劑)</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>防寒衣 / 水母衣 / 套鞋 / 蛙鞋</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>潛水電腦錶 (檢查電量)</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>浮力袋 (SMB) 與線軸 (考照必備)</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>水下手電筒 (夜潛用，充飽電+備用電池)</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="w-4 h-4 accent-comicBorder rounded"><span>GoPro / 防水相機與浮水桿</span></label>
+          </div>
+        </div>
+
+        <!-- 隨身日用 -->
+        <div class="bg-white comic-box p-3.5 shadow-comic-sm space-y-2">
+          <div class="font-black text-xs text-comicBorder flex items-center gap-1.5 pb-1 border-b border-neutral-100">
+            <span>🧴</span> 【生活日用與常備藥】
+          </div>
+          <div class="grid grid-cols-1 gap-1.5 text-xs font-bold text-comicBorder">
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>暈船藥 (上船前 30 分鐘服用)</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>海洋友善防曬乳</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>快乾浴巾、個人盥洗用品 (牙膏牙刷)</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="w-4 h-4 accent-comicBorder rounded"><span>大容量行動電源、充電線</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="w-4 h-4 accent-comicBorder rounded"><span>防水收納袋 (保護手機錢包上船)</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================= 底部固定導航列 ========================= -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-[#faf7ee]/95 backdrop-blur-md border-t-2 border-comicBorder px-3 py-2 z-40">
+    <div class="max-w-xl mx-auto flex items-center justify-around">
+      <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center">
+        <div class="nav-icon-box w-12 h-8 rounded-2xl bg-appYellow border-2 border-comicBorder flex items-center justify-center shadow-comic-sm">
+          <i data-lucide="home" class="w-4 h-4 text-comicBorder"></i>
+        </div>
+        <span class="text-[11px] font-black text-comicBorder mt-0.5">首頁</span>
+      </button>
+
+      <button onclick="switchTab('itinerary')" id="nav-itinerary" class="flex flex-col items-center opacity-60">
+        <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
+          <i data-lucide="calendar" class="w-4 h-4 text-comicBorder"></i>
+        </div>
+        <span class="text-[11px] font-bold text-comicBorder mt-0.5">行程</span>
+      </button>
+
+      <button onclick="switchTab('dive')" id="nav-dive" class="flex flex-col items-center opacity-60">
+        <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
+          <i data-lucide="anchor" class="w-4 h-4 text-comicBorder"></i>
+        </div>
+        <span class="text-[11px] font-bold text-comicBorder mt-0.5">潛水</span>
+      </button>
+
+      <button onclick="switchTab('expense')" id="nav-expense" class="flex flex-col items-center opacity-60">
+        <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
+          <span class="text-sm font-black text-comicBorder">$</span>
+        </div>
+        <span class="text-[11px] font-bold text-comicBorder mt-0.5">記帳</span>
+      </button>
+
+      <button onclick="switchTab('transit')" id="nav-transit" class="flex flex-col items-center opacity-60">
+        <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
+          <i data-lucide="navigation" class="w-4 h-4 text-comicBorder"></i>
+        </div>
+        <span class="text-[11px] font-bold text-comicBorder mt-0.5">交通</span>
+      </button>
+
+      <button onclick="switchTab('pack')" id="nav-pack" class="flex flex-col items-center opacity-60">
+        <div class="nav-icon-box w-12 h-8 rounded-2xl border-2 border-comicBorder bg-white flex items-center justify-center">
+          <i data-lucide="briefcase" class="w-4 h-4 text-comicBorder"></i>
+        </div>
+        <span class="text-[11px] font-bold text-comicBorder mt-0.5">清單</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- 彈窗：新增/編輯行程 -->
+  <div id="spot-modal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#faf7ee] w-full max-w-sm comic-box p-4 space-y-3">
+      <div class="flex justify-between items-center">
+        <h3 class="font-black text-sm text-comicBorder" id="spot-modal-title">新增行程</h3>
+        <button onclick="closeModal('spot-modal')" class="text-sm font-bold text-comicBorder">✕</button>
+      </div>
+      <div class="space-y-2 text-xs font-bold">
+        <input type="text" id="spot-time" placeholder="時間 (例如 13:00)" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder focus:outline-none">
+        <input type="text" id="spot-name" placeholder="行程或潛水項目名稱" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder focus:outline-none">
+        <input type="text" id="spot-desc" placeholder="詳細備註、裝備或潛點說明" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder focus:outline-none">
+      </div>
+      <button onclick="saveSpot()" class="w-full py-2.5 bg-appYellow rounded-xl comic-box-md text-xs font-black shadow-comic-sm active:scale-95">儲存至該日行程</button>
+    </div>
+  </div>
+
+  <!-- 彈窗：記帳（三人專用：支援 自行負擔、兩人分攤、三人平攤） -->
+  <div id="expense-modal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#faf7ee] w-full max-w-sm comic-box p-4 space-y-3">
+      <div class="flex justify-between items-center">
+        <h3 class="font-black text-sm text-comicBorder" id="exp-modal-title">新增花費記錄</h3>
+        <button onclick="closeModal('expense-modal')" class="text-sm font-bold text-comicBorder">✕</button>
+      </div>
+      
+      <input type="hidden" id="exp-edit-id" value="">
+
+      <div class="space-y-2.5 text-xs font-bold">
+        <div>
+          <label class="block text-subGray mb-1 text-[11px]">費用項目說明</label>
+          <input type="text" id="exp-name" placeholder="項目 (如：台潛潛券、小琉球住宿尾款、晚餐)" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-subGray mb-1 text-[11px]">金額 (TWD 新台幣)</label>
+          <input type="number" id="exp-amount" placeholder="金額 (NT$)" step="1" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder font-mono text-base focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-subGray mb-1 text-[11px]">誰先掏錢墊付？</label>
+            <select id="exp-payer" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder font-bold">
+              <option value="Dylan">Dylan (楊曜丞)</option>
+              <option value="Joyce">Joyce (嗡嗡)</option>
+              <option value="Wendy">Wendy (張)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-subGray mb-1 text-[11px]">誰來分攤此筆？</label>
+            <select id="exp-split" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder font-bold">
+              <option value="all3">🤝 三人平分 (Dylan+Joyce+Wendy)</option>
+              <option value="DJ">👥 雙人平分 (Dylan + Joyce)</option>
+              <option value="Dylan">🙋‍♂️ Dylan 個人負擔</option>
+              <option value="Joyce">🙋‍♀️ Joyce 個人負擔</option>
+              <option value="Wendy">🙋‍♀️ Wendy 個人負擔</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-1">
+        <button onclick="saveExpense()" id="exp-submit-btn" class="w-full py-2.5 bg-appYellow rounded-xl comic-box-md text-xs font-black shadow-comic-sm active:scale-95">確認儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗：新增潛水 Log -->
+  <div id="dive-modal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#faf7ee] w-full max-w-sm comic-box p-4 space-y-3">
+      <div class="flex justify-between items-center">
+        <h3 class="font-black text-sm text-comicBorder">登記潛水 Log 紀錄</h3>
+        <button onclick="closeModal('dive-modal')" class="text-sm font-bold text-comicBorder">✕</button>
+      </div>
+      <div class="space-y-2 text-xs font-bold">
+        <input type="text" id="log-site" placeholder="潛點名稱 (如：花瓶岩、鋼鐵礁、後壁湖出水口)" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder">
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" id="log-depth" placeholder="最大深度 (如 22m)" class="bg-white p-2.5 rounded-xl border-2 border-comicBorder">
+          <input type="text" id="log-time" placeholder="潛水時間 (如 48 min)" class="bg-white p-2.5 rounded-xl border-2 border-comicBorder">
+        </div>
+        <input type="text" id="log-note" placeholder="水中亮點生物或考照心得 (看見海龜、放流爽)" class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder">
+      </div>
+      <button onclick="saveDiveLog()" class="w-full py-2.5 bg-appYellow rounded-xl comic-box-md text-xs font-black shadow-comic-sm active:scale-95">寫入 Log</button>
+    </div>
+  </div>
+
+  <!-- 彈窗：Firebase 雲端設定 (貼上 Config 即用) -->
+  <div id="config-modal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#faf7ee] w-full max-w-md comic-box p-4 space-y-3">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-1.5">
+          <span class="text-xl">🔥</span>
+          <h3 class="font-black text-sm text-comicBorder">Firebase 雲端同步設定</h3>
+        </div>
+        <button onclick="closeModal('config-modal')" class="text-sm font-bold text-comicBorder">✕</button>
+      </div>
+
+      <div class="text-xs text-subGray font-bold leading-relaxed">
+        貼上你在 Firebase 控制台建立的 <code class="bg-amber-100 text-amber-900 px-1 rounded">firebaseConfig</code>（包含 apiKey、projectId 等 JSON 格式）。
+      </div>
+
+      <div>
+        <textarea id="firebase-config-input" rows="6" placeholder='{&#10;  "apiKey": "AIzaSy...",&#10;  "authDomain": "...",&#10;  "projectId": "...",&#10;  "storageBucket": "...",&#10;  "messagingSenderId": "...",&#10;  "appId": "..."&#10;}' class="w-full bg-white p-2.5 rounded-xl border-2 border-comicBorder font-mono text-[11px] focus:outline-none"></textarea>
+      </div>
+
+      <div class="flex gap-2 pt-1">
+        <button onclick="saveFirebaseConfig()" class="flex-1 py-2.5 bg-appYellow rounded-xl comic-box-md text-xs font-black shadow-comic-sm active:scale-95">
+          儲存並連線
+        </button>
+        <button onclick="clearFirebaseConfig()" class="py-2.5 px-3 bg-white rounded-xl comic-box-md text-xs font-bold text-rose-500 hover:bg-rose-50">
+          清除
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彈窗：旅伴身份驗證 -->
+  <div id="auth-modal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[#faf7ee] w-full max-w-sm comic-box p-4 space-y-3">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-1.5">
+          <span class="text-lg">🔐</span>
+          <h3 class="font-black text-sm text-comicBorder">爛草莓旅伴身分驗證</h3>
+        </div>
+        <button onclick="closeModal('auth-modal')" class="text-sm font-bold text-comicBorder">✕</button>
+      </div>
+
+      <div class="text-xs text-subGray font-bold leading-relaxed">
+        <strong>Dylan (楊曜丞)</strong>、<strong>Joyce (嗡嗡)</strong> 與 <strong>Wendy (張)</strong> 輸入專屬通行碼後可記帳與修改行程；訪客模式可完整檢視。
+      </div>
+
+      <div class="space-y-2 text-xs font-bold pt-1">
+    let defaultDiveLogs = [
+      { id: 1, site: "小琉球 • 花瓶岩", depth: "14m", time: "52 min", note: "首日 Fun Dive，巧遇兩隻優雅大綠蠵龜，水溫舒適！" },
+      { id: 2, site: "小琉球 • 杉福沉船", depth: "18m", time: "44 min", note: "夜潛導航練習，看見害羞的花枝與漂亮獅子魚。" },
+      { id: 3, site: "綠島 • 鋼鐵礁", depth: "28m", time: "38 min", note: "燕魚群風暴超壯觀！能見度至少 30 公尺以上超透澈。" },
+      { id: 4, site: "墾丁 • 後壁湖出水口", depth: "12m", time: "50 min", note: "Wendy 張同學合流！水下比愛心合影成功。" }
+    ];
+
+    let diveLogs = JSON.parse(JSON.stringify(defaultDiveLogs));
+
+    // ================= Firebase 雲端同步核心模組 =================
+    let fbApp = null;
+    let fbDb = null;
+    let syncDocRef = null;
+
+    function initFirebaseSync() {
+      const statusBadge = document.getElementById('sync-status-badge');
+      const savedConfig = localStorage.getItem('berry_firebase_config');
+
+      if (!savedConfig) {
+        if (statusBadge) statusBadge.textContent = '本機離線模式 (點設定連雲端)';
+        return;
+      }
+
+      try {
+        const configObj = JSON.parse(savedConfig);
+        if (typeof firebase === 'undefined') {
+          if (statusBadge) statusBadge.textContent = '本地快取模式';
+          return;
+        }
+
+        if (!firebase.apps.length) {
+          fbApp = firebase.initializeApp(configObj);
+        } else {
+          fbApp = firebase.app();
+        }
+
+        fbDb = firebase.firestore();
+
+        // 匿名登入
+        firebase.auth().signInAnonymously().catch(e => {
+          console.debug("Firebase Auth Note:", e);
+        });
+
+        // 綁定爛草莓潛水專屬文件
+        syncDocRef = fbDb.collection("berry_dive_trips").doc("strawberry_team");
+
+        // 即時雙向監聽
+        syncDocRef.onSnapshot((doc) => {
+          if (doc.exists) {
+            const data = doc.data();
+            if (data.expenses && Array.isArray(data.expenses)) {
+              expenses = data.expenses;
+            }
+            if (data.tripData && typeof data.tripData === 'object') {
+              tripData = data.tripData;
+            }
+            if (data.diveLogs && Array.isArray(data.diveLogs)) {
+              diveLogs = data.diveLogs;
+            }
+
+            saveLocalCache();
+            renderExpenses();
+            renderDaySchedule();
+            renderDiveLogs();
+
+            if (statusBadge) statusBadge.textContent = '🟢 雲端已即時同步';
+          } else {
+            pushToCloud();
+            if (statusBadge) statusBadge.textContent = '🟢 雲端已連線建立';
+          }
+        }, (error) => {
+          console.warn("Firestore error:", error);
+          if (statusBadge) statusBadge.textContent = '連線受限 (請檢查規則)';
+        });
+
+      } catch (err) {
+        console.error("Firebase init failed:", err);
+        if (statusBadge) statusBadge.textContent = 'Config 格式錯誤';
+      }
+    }
+
+    async function pushToCloud() {
+      saveLocalCache();
+      if (!syncDocRef) return;
+      try {
+        await syncDocRef.set({
+          expenses: expenses,
+          tripData: tripData,
+          diveLogs: diveLogs,
+          lastUpdatedBy: currentUser.role,
+          updatedAt: Date.now()
+        }, { merge: true });
+        const statusBadge = document.getElementById('sync-status-badge');
+        if (statusBadge) statusBadge.textContent = '🟢 雲端已即時同步';
+      } catch (err) {
+        console.warn("Push error:", err);
+      }
+    }
+
+    function forceManualCloudSync() {
+      pushToCloud();
+      showToast('🔄 已手動觸發雲端同步！');
+    }
+
+    function openConfigModal() {
+      const savedConfig = localStorage.getItem('berry_firebase_config') || '';
+      document.getElementById('firebase-config-input').value = savedConfig;
+      document.getElementById('config-modal').classList.remove('hidden');
+    }
+
+    function saveFirebaseConfig() {
+      let raw = document.getElementById('firebase-config-input').value.trim();
+      if (!raw) return showToast('請填入 Firebase Config 內容！');
+
+      // 支援使用者直接貼 const firebaseConfig = { ... }
+      if (raw.includes('{') && raw.includes('}')) {
+        raw = raw.substring(raw.indexOf('{'), raw.lastIndexOf('}') + 1);
+      }
+
+      try {
+        // 修正非嚴格 JSON (例如 key 沒有引號)
+        let formatted = raw.replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
+        const parsed = JSON.parse(formatted);
+        localStorage.setItem('berry_firebase_config', JSON.stringify(parsed));
+        closeModal('config-modal');
+        showToast('✅ Firebase Config 儲存成功，正在連線...');
+        initFirebaseSync();
+      } catch (e) {
+        // 若正規修正失敗，嘗試以 Function 方式安全取值
+        try {
+          const fn = new Function(`return ${raw}`);
+          const parsed = fn();
+          localStorage.setItem('berry_firebase_config', JSON.stringify(parsed));
+          closeModal('config-modal');
+          showToast('✅ Firebase Config 儲存成功，正在連線...');
+          initFirebaseSync();
+        } catch (err2) {
+          showToast('❌ JSON 格式有誤，請確認複製正確！');
+        }
+      }
+    }
+
+    function clearFirebaseConfig() {
+      localStorage.removeItem('berry_firebase_config');
+      document.getElementById('firebase-config-input').value = '';
+      closeModal('config-modal');
+      const statusBadge = document.getElementById('sync-status-badge');
+      if (statusBadge) statusBadge.textContent = '本地離線模式';
+      showToast('已清除雲端設定，恢復離線快取');
+    }
+
+    // ================= 使用者權限設定 =================
+    const VALID_PASSCODES = ["8888", "1111", "2026"];
+    let currentUser = {
+      role: "Guest",
+      isAuthorized: false
+    };
+
+    function initAuthStatus() {
+      try {
+        const savedRole = localStorage.getItem('berry_user_role') || sessionStorage.getItem('berry_user_role');
+        const savedAuth = localStorage.getItem('berry_is_auth') || sessionStorage.getItem('berry_is_auth');
+        if (savedAuth === 'true' && ['Dylan', 'Joyce', 'Wendy'].includes(savedRole)) {
+          currentUser.role = savedRole;
+          currentUser.isAuthorized = true;
+        }
+      } catch (e) {}
+      updateAuthUI();
+    }
+
+    function updateAuthUI() {
+      const lockIcon = document.getElementById('auth-lock-icon');
+      const userLabel = document.getElementById('auth-user-label');
+      const expPayerSelect = document.getElementById('exp-payer');
+
+      if (currentUser.isAuthorized) {
+        lockIcon.textContent = '🔓';
+        userLabel.textContent = `${currentUser.role} (可編輯)`;
+        if (expPayerSelect) expPayerSelect.value = currentUser.role;
+      } else {
+        lockIcon.textContent = '🔒';
+        userLabel.textContent = '解鎖編輯';
+      }
+    }
+
+    function openAuthModal() {
+      document.getElementById('auth-passcode').value = '';
+      selectRole(currentUser.role !== 'Guest' ? currentUser.role : 'Dylan');
+      document.getElementById('auth-modal').classList.remove('hidden');
+    }
+
+    let selectedRoleInModal = 'Dylan';
+    function selectRole(role) {
+      selectedRoleInModal = role;
+      ['Dylan', 'Joyce', 'Wendy'].forEach(r => {
+        const btn = document.getElementById(`role-btn-${r}`);
+        if (!btn) return;
+        if (r === role) {
+          btn.className = 'py-2 rounded-xl comic-box-md bg-appYellow text-comicBorder font-black shadow-comic-sm text-xs';
+        } else {
+          btn.className = 'py-2 rounded-xl comic-box-md bg-white text-comicBorder font-bold text-xs';
+        }
+      });
+    }
+
+    function unlockEditor() {
+      const pass = document.getElementById('auth-passcode').value.trim();
+      if (VALID_PASSCODES.includes(pass) || pass === '8888') {
+        currentUser.role = selectedRoleInModal;
+        currentUser.isAuthorized = true;
+        try {
+          localStorage.setItem('berry_user_role', currentUser.role);
+          localStorage.setItem('berry_is_auth', 'true');
+        } catch(e) {}
+        closeModal('auth-modal');
+        updateAuthUI();
+        renderDaySchedule();
+        renderExpenses();
+        renderDiveLogs();
+        showToast(`🎉 歡迎隊員 ${currentUser.role}！已解鎖特攻隊編輯權限`);
+      } else {
+        showToast('❌ 通行碼錯誤！請嘗試 8888 或 1111');
+      }
+    }
+
+    function lockToReadOnly() {
+      currentUser.role = 'Guest';
+      currentUser.isAuthorized = false;
+      try {
+        localStorage.removeItem('berry_user_role');
+        localStorage.removeItem('berry_is_auth');
+      } catch(e) {}
+      closeModal('auth-modal');
+      updateAuthUI();
+      renderDaySchedule();
+      renderExpenses();
+      renderDiveLogs();
+      showToast('🔒 已切換為訪客唯讀模式');
+    }
+
+    function checkEditPermission() {
+      if (!currentUser.isAuthorized) {
+        openAuthModal();
+        showToast('🔒 訪客模式僅能瀏覽，請先輸入通行碼解鎖！');
+        return false;
+      }
+      return true;
+    }
+
+    // ================= 快取機制 (本地離線儲存) =================
+    function loadLocalCache() {
+      try {
+        const cachedExp = localStorage.getItem('berry_cache_expenses');
+        if (cachedExp) expenses = JSON.parse(cachedExp);
+
+        const cachedTrip = localStorage.getItem('berry_cache_trip');
+        if (cachedTrip) tripData = JSON.parse(cachedTrip);
+
+        const cachedLogs = localStorage.getItem('berry_cache_divelogs');
+        if (cachedLogs) diveLogs = JSON.parse(cachedLogs);
+      } catch (e) {}
+    }
+
+    function saveLocalCache() {
+      try {
+        localStorage.setItem('berry_cache_expenses', JSON.stringify(expenses));
+        localStorage.setItem('berry_cache_trip', JSON.stringify(tripData));
+        localStorage.setItem('berry_cache_divelogs', JSON.stringify(diveLogs));
+      } catch (e) {}
+    }
+
+    // ================= 倒數計時器 =================
+    function initCountdown() {
+      // 目標出發時間：2026-11-20 08:00
+      const targetTime = new Date("2026-11-20T08:00:00+08:00").getTime();
+      const endTime = new Date("2026-12-07T18:00:00+08:00").getTime();
+
+      function update() {
+        const now = new Date().getTime();
+        let diff = targetTime - now;
+        const titleEl = document.getElementById('cd-title');
+
+        if (diff > 0) {
+          if (titleEl) titleEl.textContent = "距離小琉球第一跳出發還有";
+        } else if (now >= targetTime && now <= endTime) {
+          if (titleEl) titleEl.textContent = "🤿 爛草莓三大潛點特攻進行中！";
+          diff = endTime - now;
+        } else {
+          if (titleEl) titleEl.textContent = "🎉 潛水遠征圓滿成功！期待下次回海裡";
+          document.getElementById('cd-day').textContent = "0";
+          document.getElementById('cd-hour').textContent = "00";
+          document.getElementById('cd-min').textContent = "00";
+          document.getElementById('cd-sec').textContent = "00";
+          return;
+        }
+
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0');
+        const m = String(Math.floor((diff / 1000 / 60) % 60)).padStart(2, '0');
+        const s = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+
+        document.getElementById('cd-day').textContent = d;
+        document.getElementById('cd-hour').textContent = h;
+        document.getElementById('cd-min').textContent = m;
+        document.getElementById('cd-sec').textContent = s;
+      }
+
+      update();
+      setInterval(update, 1000);
+    }
+
+    // ================= 互動特效：海龜泡泡與草莓掉落 =================
+    function dropStrawberryBubble(e) {
+      const container = document.getElementById('bubble-container');
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const icons = ['🫧', '🍓', '🤿', '🐢'];
+      for (let i = 0; i < 4; i++) {
+        const item = document.createElement('div');
+        item.className = 'bubble-drop';
+        item.textContent = icons[Math.floor(Math.random() * icons.length)];
+        item.style.left = `${x + (Math.random() * 30 - 15)}px`;
+        item.style.top = `${y + (Math.random() * 20 - 10)}px`;
+        container.appendChild(item);
+
+        setTimeout(() => {
+          if (item.parentNode) item.parentNode.removeChild(item);
+        }, 800);
+      }
+
+      const turtle = document.getElementById('turtle-el');
+      if (turtle) {
+        turtle.style.transform = 'translate(42px, 162px) scale(1.1)';
+        setTimeout(() => {
+          turtle.style.transform = 'translate(42px, 172px) scale(1)';
+        }, 300);
+      }
+
+      showToast("🌊 爛草莓三人組正在大海裡開心中性浮力！");
+    }
+
+    // ================= 切換分頁 =================
+    function switchTab(tabId) {
+      ['home', 'itinerary', 'dive', 'expense', 'transit', 'pack'].forEach(t => {
+        const p = document.getElementById(`tab-${t}`);
+        const n = document.getElementById(`nav-${t}`);
+        if (p) p.classList.add('hidden');
+        if (n) {
+          n.classList.add('opacity-60');
+          const box = n.querySelector('.nav-icon-box');
+          if (box) {
+            box.classList.remove('bg-appYellow', 'shadow-comic-sm');
+            box.classList.add('bg-white');
+          }
+        }
+      });
+
+      const curP = document.getElementById(`tab-${tabId}`);
+      const curN = document.getElementById(`nav-${tabId}`);
+      if (curP) curP.classList.remove('hidden');
+      if (curN) {
+        curN.classList.remove('opacity-60');
+        const box = curN.querySelector('.nav-icon-box');
+        if (box) {
+          box.classList.remove('bg-white');
+          box.classList.add('bg-appYellow', 'shadow-comic-sm');
+        }
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // ================= 行程導航與渲染 =================
+    function renderDaysNav() {
+      const container = document.getElementById('days-nav-scroll');
+      container.innerHTML = dayMeta.map(d => `
+        <button onclick="setDay(${d.id})" id="d-btn-${d.id}" class="day-pill comic-box-md ${d.id === curDay ? 'bg-appYellow shadow-comic-sm' : 'bg-white'} px-3 py-1.5 text-xs font-black shrink-0 flex flex-col items-start leading-tight transition-colors">
+          <span>${d.title}</span>
+          <span class="text-[10px] ${d.id === curDay ? 'text-comicBorder' : 'text-subGray'} font-bold">${d.sub}</span>
+        </button>
+      `).join('');
+    }
+
+    function setDay(d) {
+      curDay = d;
+      renderDaysNav();
+
+      const meta = dayMeta.find(x => x.id === d);
+      const bannerTitle = document.getElementById('day-theme-title');
+      const bannerBadge = document.getElementById('day-theme-badge');
+      if (bannerTitle && meta) bannerTitle.textContent = `重點：${meta.focus}`;
+      if (bannerBadge && meta) bannerBadge.textContent = `D${d} • ${meta.title}`;
+
+      renderDaySchedule();
+    }
+
+    function renderDaySchedule() {
+      const container = document.getElementById('day-spots-container');
+      const list = tripData[curDay] || [];
+      if (list.length === 0) {
+        container.innerHTML = '<div class="text-center py-6 text-subGray font-bold text-xs">這天暫無安排，點右上方新增活動吧！</div>';
+        return;
+      }
+
+      container.innerHTML = list.map((item, idx) => `
+        <div class="relative pl-6 pb-4 last:pb-1 group">
+          <div class="absolute left-2 top-2 -bottom-2 w-0.5 bg-neutral-300 group-last:hidden"></div>
+          <div class="absolute left-0.5 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-comicBorder bg-appYellow"></div>
+          <div class="flex items-center justify-between">
+            <span class="font-mono font-black text-xs text-comicBorder">${item.time}</span>
+            <button onclick="removeSpot(${idx})" class="text-[10px] text-rose-500 font-bold hover:underline ${currentUser.isAuthorized ? '' : 'hidden'}">刪除</button>
+          </div>
+          <div class="font-black text-sm text-comicBorder mt-0.5">${item.name}</div>
+          <div class="text-xs text-subGray font-bold mt-0.5 leading-snug">${item.desc}</div>
+        </div>
+      `).join('');
+    }
+
+    function openAddSpotModal() {
+      if (!checkEditPermission()) return;
+      document.getElementById('spot-modal-title').textContent = `新增至 Day ${curDay} 行程`;
+      document.getElementById('spot-time').value = '';
+      document.getElementById('spot-name').value = '';
+      document.getElementById('spot-desc').value = '';
+      document.getElementById('spot-modal').classList.remove('hidden');
+    }
+
+    function saveSpot() {
+      if (!checkEditPermission()) return;
+      const time = document.getElementById('spot-time').value.trim() || '彈性';
+      const name = document.getElementById('spot-name').value.trim();
+      const desc = document.getElementById('spot-desc').value.trim() || '無備註';
+      if (!name) return showToast('請填寫活動名稱！');
+
+      if (!tripData[curDay]) tripData[curDay] = [];
+      tripData[curDay].push({ time, name, desc });
+      closeModal('spot-modal');
+      renderDaySchedule();
+      pushToCloud();
+      showToast('已新增行程項目！');
+    }
+
+    function removeSpot(idx) {
+      if (!checkEditPermission()) return;
+      if (window.confirm('確定要刪除這筆行程嗎？')) {
+        tripData[curDay].splice(idx, 1);
+        renderDaySchedule();
+        pushToCloud();
+        showToast('已刪除行程');
+      }
+    }
+
+    // ================= 潛水日誌功能 =================
+    function renderDiveLogs() {
+      const container = document.getElementById('dive-log-list');
+      const badge = document.getElementById('dive-count-badge');
+      if (badge) badge.textContent = `共 ${diveLogs.length} 潛紀錄`;
+
+      if (diveLogs.length === 0) {
+        container.innerHTML = '<div class="col-span-2 text-center py-6 text-subGray font-bold text-xs">尚無潛水日誌，點擊右上角新增一潛！</div>';
+        return;
+      }
+
+      container.innerHTML = diveLogs.slice().reverse().map((log, idx) => `
+        <div class="bg-white rounded-2xl p-3 comic-box-md flex flex-col justify-between text-xs font-bold shadow-comic-sm space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="font-black text-sm text-comicBorder flex items-center gap-1">
+              <span>🤿</span> ${log.site}
+            </span>
+            <button onclick="removeDiveLog(${log.id})" class="text-[10px] text-rose-500 font-bold hover:underline ${currentUser.isAuthorized ? '' : 'hidden'}">刪除</button>
+          </div>
+          <div class="flex items-center gap-2 text-[11px] text-subGray font-mono">
+            <span class="bg-sky-50 text-sky-800 px-2 py-0.5 rounded border border-sky-200">深度：${log.depth}</span>
+            <span class="bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200">時間：${log.time}</span>
+          </div>
+          <div class="text-subGray font-normal text-xs pt-0.5">${log.note}</div>
+        </div>
+      `).join('');
+    }
+
+    function openAddDiveModal() {
+      if (!checkEditPermission()) return;
+      document.getElementById('log-site').value = '';
+      document.getElementById('log-depth').value = '';
+      document.getElementById('log-time').value = '';
+      document.getElementById('log-note').value = '';
+      document.getElementById('dive-modal').classList.remove('hidden');
+    }
+
+    function saveDiveLog() {
+      if (!checkEditPermission()) return;
+      const site = document.getElementById('log-site').value.trim();
+      const depth = document.getElementById('log-depth').value.trim() || '15m';
+      const time = document.getElementById('log-time').value.trim() || '45 min';
+      const note = document.getElementById('log-note').value.trim() || '水質清澈，安全出水';
+      if (!site) return showToast('請填寫潛點名稱！');
+
+      diveLogs.push({
+        id: Date.now(),
+        site,
+        depth,
+        time,
+        note
+      });
+      closeModal('dive-modal');
+      renderDiveLogs();
+      pushToCloud();
+      showToast('🎉 已成功登錄潛水 Log！');
+    }
+
+    function removeDiveLog(id) {
+      if (!checkEditPermission()) return;
+      if (window.confirm('確定要刪除這筆潛水 Log 嗎？')) {
+        diveLogs = diveLogs.filter(x => x.id !== id);
+        renderDiveLogs();
+        pushToCloud();
+        showToast('已刪除潛水紀錄');
+      }
+    }
+
+    // ================= 三人拆帳演算法 (Dylan, Joyce, Wendy) =================
+    function renderExpenses() {
+      let total = 0;
+      let paid = { Dylan: 0, Joyce: 0, Wendy: 0 };
+      let burden = { Dylan: 0, Joyce: 0, Wendy: 0 };
+
+      expenses.forEach(e => {
+        const val = parseFloat(e.amount) || 0;
+        total += val;
+
+        // 墊付人記錄
+        if (paid[e.payer] !== undefined) {
+          paid[e.payer] += val;
+        }
+
+        // 分攤模式計算
+        const split = e.split || 'all3';
+        if (split === 'all3') {
+          // 三人平分
+          const share = val / 3;
+          burden.Dylan += share;
+          burden.Joyce += share;
+          burden.Wendy += share;
+        } else if (split === 'DJ') {
+          // Dylan 與 Joyce 兩人平分 (前段小琉球與綠島)
+          const share = val / 2;
+          burden.Dylan += share;
+          burden.Joyce += share;
+        } else if (split === 'Dylan') {
+          burden.Dylan += val;
+        } else if (split === 'Joyce') {
+          burden.Joyce += val;
+        } else if (split === 'Wendy') {
+          burden.Wendy += val;
+        }
+      });
+
+      document.getElementById('exp-total-twd').textContent = Math.round(total).toLocaleString();
+      document.getElementById('dylan-burden').textContent = `NT$ ${Math.round(burden.Dylan).toLocaleString()}`;
+      document.getElementById('joyce-burden').textContent = `NT$ ${Math.round(burden.Joyce).toLocaleString()}`;
+      document.getElementById('wendy-burden').textContent = `NT$ ${Math.round(burden.Wendy).toLocaleString()}`;
+
+      // 結算 netBalance = 實付 - 應付 (大於 0 代表墊付多應收回，小於 0 代表應補給他人)
+      const net = {
+        Dylan: paid.Dylan - burden.Dylan,
+        Joyce: paid.Joyce - burden.Joyce,
+        Wendy: paid.Wendy - burden.Wendy
+      };
+
+      // 計算誰轉給誰的轉帳演算法
+      let debtors = [];   // net < 0 (需給錢)
+      let creditors = []; // net > 0 (應收錢)
+
+      for (const [name, amount] of Object.entries(net)) {
+        if (amount < -1) {
+          debtors.push({ name, amount: -amount });
+        } else if (amount > 1) {
+          creditors.push({ name, amount });
+        }
+      }
+
+      debtors.sort((a, b) => b.amount - a.amount);
+      creditors.sort((a, b) => b.amount - a.amount);
+
+      let transfers = [];
+      let dIdx = 0, cIdx = 0;
+      while (dIdx < debtors.length && cIdx < creditors.length) {
+        const deb = debtors[dIdx];
+        const cred = creditors[cIdx];
+        const payAmt = Math.min(deb.amount, cred.amount);
+
+        if (payAmt > 1) {
+          transfers.push({
+            from: deb.name,
+            to: cred.name,
+            amount: Math.round(payAmt)
+          });
+        }
+
+        deb.amount -= payAmt;
+        cred.amount -= payAmt;
+
+        if (deb.amount <= 1) dIdx++;
+        if (cred.amount <= 1) cIdx++;
+      }
+
+      const settleEl = document.getElementById('settlement-detail');
+      if (transfers.length === 0) {
+        settleEl.innerHTML = `🎉 目前帳目已完全平衡，大家互不相欠！<br><span class="text-subGray text-[11px] font-normal">實付：Dylan $${Math.round(paid.Dylan)} / Joyce $${Math.round(paid.Joyce)} / Wendy $${Math.round(paid.Wendy)}</span>`;
+      } else {
+        settleEl.innerHTML = transfers.map(t => `
+          <div class="py-0.5">
+            👉 <strong>${t.from}</strong> 需轉給 <strong>${t.to}</strong>：
+            <span class="text-rose-600 font-mono font-black text-sm">NT$ ${t.amount.toLocaleString()}</span>
+          </div>
+        `).join('') + `<div class="text-[10px] text-subGray font-normal mt-1 border-t border-comicBorder/10 pt-1">（實付：Dylan $${Math.round(paid.Dylan)}、Joyce $${Math.round(paid.Joyce)}、Wendy $${Math.round(paid.Wendy)}）</div>`;
+      }
+
+      // 渲染開銷卡片
+      const listEl = document.getElementById('expense-records');
+      listEl.innerHTML = expenses.slice().reverse().map(e => {
+        let splitLabel = '';
+        if (e.split === 'all3') {
+          splitLabel = '<span class="text-blue-700 bg-blue-50 px-1 rounded border border-blue-200">🤝 三人平攤</span>';
+        } else if (e.split === 'DJ') {
+          splitLabel = '<span class="text-emerald-700 bg-emerald-50 px-1 rounded border border-emerald-200">👥 Dylan+Joyce</span>';
+        } else {
+          splitLabel = `<span class="text-purple-700 bg-purple-50 px-1 rounded border border-purple-200">🙋 ${e.split} 個人</span>`;
+        }
+
+        return `
+          <div class="bg-white rounded-2xl p-3 comic-box-md flex items-center justify-between text-xs font-bold shadow-comic-sm">
+            <div class="space-y-1">
+              <div class="text-comicBorder font-black text-sm">${e.name}</div>
+              <div class="text-subGray text-[11px] flex items-center gap-1.5 flex-wrap">
+                <span>先墊：<strong>${e.payer}</strong></span>
+                <span>•</span>
+                <span>${splitLabel}</span>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="font-mono font-black text-sm text-comicBorder">NT$ ${parseFloat(e.amount).toLocaleString()}</div>
+              <div class="flex items-center gap-2 mt-1 justify-end ${currentUser.isAuthorized ? '' : 'hidden'}">
+                <button onclick="editExpense(${e.id})" class="text-[11px] text-blue-600 font-bold hover:underline">✏️ 編輯</button>
+                <button onclick="removeExpense(${e.id})" class="text-[11px] text-rose-500 font-bold hover:underline">🗑️ 刪除</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openExpenseModal() {
+      if (!checkEditPermission()) return;
+      document.getElementById('exp-modal-title').textContent = '新增特攻隊開銷';
+      document.getElementById('exp-submit-btn').textContent = '確認記帳';
+      document.getElementById('exp-edit-id').value = '';
+      document.getElementById('exp-name').value = '';
+      document.getElementById('exp-amount').value = '';
+      document.getElementById('exp-split').value = 'all3';
+
+      if (currentUser.isAuthorized) {
+        document.getElementById('exp-payer').value = currentUser.role;
+      }
+      document.getElementById('expense-modal').classList.remove('hidden');
+    }
+
+    function editExpense(id) {
+      if (!checkEditPermission()) return;
+      const target = expenses.find(x => x.id === id);
+      if (!target) return;
+
+      document.getElementById('exp-modal-title').textContent = '修改開銷內容';
+      document.getElementById('exp-submit-btn').textContent = '確認修改';
+      document.getElementById('exp-edit-id').value = target.id;
+      document.getElementById('exp-name').value = target.name;
+      document.getElementById('exp-amount').value = target.amount;
+      document.getElementById('exp-payer').value = target.payer;
+      document.getElementById('exp-split').value = target.split || 'all3';
+
+      document.getElementById('expense-modal').classList.remove('hidden');
+    }
+
+    function saveExpense() {
+      if (!checkEditPermission()) return;
+      const editId = document.getElementById('exp-edit-id').value;
+      const name = document.getElementById('exp-name').value.trim();
+      const amount = parseFloat(document.getElementById('exp-amount').value);
+      const payer = document.getElementById('exp-payer').value;
+      const split = document.getElementById('exp-split').value;
+
+      if (!name || isNaN(amount) || amount <= 0) return showToast('請填寫完整費用項目與金額！');
+
+      if (editId) {
+        const idNum = parseInt(editId, 10);
+        const idx = expenses.findIndex(x => x.id === idNum);
+        if (idx !== -1) {
+          expenses[idx] = { id: idNum, name, amount, payer, split };
+          showToast('已更新開銷記錄！');
+        }
+      } else {
+        expenses.push({
+          id: Date.now(),
+          name,
+          amount,
+          payer,
+          split
+        });
+        showToast('記帳成功！');
+      }
+
+      closeModal('expense-modal');
+      renderExpenses();
+      pushToCloud();
+    }
+
+    function removeExpense(id) {
+      if (!checkEditPermission()) return;
+      if (window.confirm('確定要刪除這筆花費嗎？')) {
+        expenses = expenses.filter(x => x.id !== id);
+        renderExpenses();
+        pushToCloud();
+        showToast('已刪除花費');
+      }
+    }
+
+    function copySplitResult() {
+      const settleText = document.getElementById('settlement-detail').innerText.replace(/\n+/g, '\n');
+      const dylanB = document.getElementById('dylan-burden').textContent;
+      const joyceB = document.getElementById('joyce-burden').textContent;
+      const wendyB = document.getElementById('wendy-burden').textContent;
+      const totalTwd = document.getElementById('exp-total-twd').textContent;
+
+      const copyStr = `【爛草莓潛水特攻隊 • 三人公積金結算】\n` +
+                      `總花費：NT$ ${totalTwd}\n` +
+                      `─── 各自應承擔 ───\n` +
+                      `Dylan 負擔：${dylanB}\n` +
+                      `Joyce 負擔：${joyceB}\n` +
+                      `Wendy 負擔：${wendyB}\n` +
+                      `─── 轉帳結算建議 ───\n` +
+                      `${settleText}`;
+      
+      const dummy = document.createElement('textarea');
+      document.body.appendChild(dummy);
+      dummy.value = copyStr;
+      dummy.select();
+      document.execCommand('copy');
+      document.body.removeChild(dummy);
+      showToast('📋 已複製結算內容，可直接貼到 LINE 團體群！');
+    }
+
+    function shareTrip() {
+      const dummy = document.createElement('textarea');
+      document.body.appendChild(dummy);
+      dummy.value = window.location.href;
+      dummy.select();
+      document.execCommand('copy');
+      document.body.removeChild(dummy);
+      showToast('🔗 已複製 App 連結，直接分享給 Joyce 和 Wendy！');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2200);
+    }
+
+    // 初始化程式
+    window.addEventListener('DOMContentLoaded', () => {
+      loadLocalCache();
+      initCountdown();
+      initAuthStatus();
+      renderDaysNav();
+      setDay(1);
+      renderExpenses();
+      renderDiveLogs();
+      if (window.lucide) lucide.createIcons();
+
+      // 啟動 Firebase 雲端雙向監聽
+      initFirebaseSync();
+    });
+  </script>
+</body>
+</html>
