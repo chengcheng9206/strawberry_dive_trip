@@ -1012,6 +1012,145 @@
 
     let diveLogs = JSON.parse(JSON.stringify(defaultDiveLogs));
 
+    // ================= 權限驗證與角色切換 =================
+    const PASSCODES = ["1111", "8888", "2026"];
+    let currentUser = {
+      role: "Guest",
+      isAuthorized: false
+    };
+
+    function initAuthStatus() {
+      try {
+        const savedRole = localStorage.getItem('berry_user_role') || sessionStorage.getItem('berry_user_role');
+        const savedAuth = localStorage.getItem('berry_is_auth') || sessionStorage.getItem('berry_is_auth');
+        if (savedAuth === 'true' && (savedRole === 'Dylan' || savedRole === 'Joyce' || savedRole === 'Wendy')) {
+          currentUser.role = savedRole;
+          currentUser.isAuthorized = true;
+        }
+      } catch (e) {}
+      updateAuthUI();
+    }
+
+    function updateAuthUI() {
+      const lockIcon = document.getElementById('auth-lock-icon');
+      const userLabel = document.getElementById('auth-user-label');
+      const expPayerSelect = document.getElementById('exp-payer');
+
+      if (currentUser.isAuthorized) {
+        if (lockIcon) lockIcon.textContent = '🔓';
+        if (userLabel) userLabel.textContent = `${currentUser.role} (可編輯)`;
+        if (expPayerSelect) expPayerSelect.value = currentUser.role;
+      } else {
+        if (lockIcon) lockIcon.textContent = '🔒';
+        if (userLabel) userLabel.textContent = '解鎖編輯';
+      }
+    }
+
+    let selectedRoleInModal = 'Dylan';
+    function selectRole(role) {
+      selectedRoleInModal = role;
+      ['Dylan', 'Joyce', 'Wendy'].forEach(r => {
+        const btn = document.getElementById(`role-btn-${r}`);
+        if (!btn) return;
+        if (r === role) {
+          btn.className = 'py-2 rounded-xl comic-box-md bg-appYellow text-comicBorder font-black shadow-comic-sm text-xs';
+        } else {
+          btn.className = 'py-2 rounded-xl comic-box-md bg-white text-comicBorder font-bold text-xs';
+        }
+      });
+    }
+
+    function openAuthModal() {
+      const passInput = document.getElementById('auth-passcode');
+      if (passInput) passInput.value = '';
+      selectRole(currentUser.role !== 'Guest' ? currentUser.role : 'Dylan');
+      const modal = document.getElementById('auth-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function unlockEditor() {
+      const passInput = document.getElementById('auth-passcode');
+      const inputPass = passInput ? passInput.value.trim() : '';
+
+      if (PASSCODES.includes(inputPass)) {
+        currentUser.role = selectedRoleInModal;
+        currentUser.isAuthorized = true;
+        try {
+          localStorage.setItem('berry_user_role', currentUser.role);
+          localStorage.setItem('berry_is_auth', 'true');
+        } catch (e) {}
+        closeModal('auth-modal');
+        updateAuthUI();
+        renderDaySchedule();
+        renderExpenses();
+        renderDiveLogs();
+        showToast(`🎉 歡迎隊員 ${currentUser.role}！已解鎖記帳與編輯權限`);
+      } else {
+        showToast('❌ 通行碼錯誤！(可試 8888 或 1111)');
+      }
+    }
+
+    function lockToReadOnly() {
+      currentUser.role = 'Guest';
+      currentUser.isAuthorized = false;
+      try {
+        localStorage.removeItem('berry_user_role');
+        localStorage.removeItem('berry_is_auth');
+      } catch (e) {}
+      closeModal('auth-modal');
+      updateAuthUI();
+      renderDaySchedule();
+      renderExpenses();
+      renderDiveLogs();
+      showToast('🔒 已切換為訪客模式');
+    }
+
+    function checkEditPermission() {
+      if (!currentUser.isAuthorized) {
+        openAuthModal();
+        showToast('🔒 訪客模式僅能檢視，請先解鎖！');
+        return false;
+      }
+      return true;
+    }
+
+    // ================= Firebase 雲端設定視窗控制 =================
+    function openConfigModal() {
+      const cfgInput = document.getElementById('firebase-config-input');
+      const savedConfig = localStorage.getItem('berry_firebase_config');
+      if (cfgInput) {
+        cfgInput.value = savedConfig || JSON.stringify(defaultFirebaseConfig, null, 2);
+      }
+      const modal = document.getElementById('config-modal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function saveFirebaseConfig() {
+      const cfgInput = document.getElementById('firebase-config-input');
+      if (!cfgInput) return;
+      const text = cfgInput.value.trim();
+      try {
+        const parsed = JSON.parse(text);
+        if (!parsed.apiKey || !parsed.projectId) {
+          showToast('❌ JSON 缺少 apiKey 或 projectId');
+          return;
+        }
+        localStorage.setItem('berry_firebase_config', JSON.stringify(parsed));
+        closeModal('config-modal');
+        showToast('✅ Firebase Config 已儲存！正在重新連線...');
+        initFirebaseSync();
+      } catch (e) {
+        showToast('❌ JSON 格式有誤，請確認複製整段大括號 { ... }');
+      }
+    }
+
+    function clearFirebaseConfig() {
+      localStorage.removeItem('berry_firebase_config');
+      const cfgInput = document.getElementById('firebase-config-input');
+      if (cfgInput) cfgInput.value = '';
+      showToast('已重設為預設設定');
+    }
+
     // ================= Firebase 雲端同步核心模組 =================
     // 預設填入你的 strawberry-dive-trip 配置
     const defaultFirebaseConfig = {
@@ -1392,6 +1531,7 @@
     // ================= 行程導航與渲染 =================
     function renderDaysNav() {
       const container = document.getElementById('days-nav-scroll');
+      if (!container) return;
       container.innerHTML = dayMeta.map(d => `
         <button onclick="setDay(${d.id})" id="d-btn-${d.id}" class="day-pill comic-box-md ${d.id === curDay ? 'bg-appYellow shadow-comic-sm' : 'bg-white'} px-3 py-1.5 text-xs font-black shrink-0 flex flex-col items-start leading-tight transition-colors">
           <span>${d.title}</span>
@@ -1401,22 +1541,24 @@
     }
 
     function setDay(d) {
-      curDay = d;
+      curDay = Number(d);
       renderDaysNav();
 
-      const meta = dayMeta.find(x => x.id === d);
+      const meta = dayMeta.find(x => x.id === curDay);
       const bannerTitle = document.getElementById('day-theme-title');
       const bannerBadge = document.getElementById('day-theme-badge');
       if (bannerTitle && meta) bannerTitle.textContent = `重點：${meta.focus}`;
-      if (bannerBadge && meta) bannerBadge.textContent = `D${d} • ${meta.title}`;
+      if (bannerBadge && meta) bannerBadge.textContent = `D${curDay} • ${meta.title}`;
 
       renderDaySchedule();
     }
 
     function renderDaySchedule() {
       const container = document.getElementById('day-spots-container');
-      const list = tripData[curDay] || [];
-      if (list.length === 0) {
+      if (!container) return;
+      // 容許 key 為數字或字串，優先讀取
+      const list = tripData[curDay] || tripData[String(curDay)] || [];
+      if (!list || list.length === 0) {
         container.innerHTML = '<div class="text-center py-6 text-subGray font-bold text-xs">這天暫無安排，點右上方新增活動吧！</div>';
         return;
       }
